@@ -99,13 +99,13 @@ export function TimeRibbon() {
           >
             {playing ? <Pause size={14} /> : <Play size={14} />}
           </button>
-          <div className="flex rounded border hairline text-[11px] num" role="group" aria-label="Playback speed">
+          <div className="hidden rounded border hairline text-[11px] num sm:flex" role="group" aria-label="Playback speed">
             {([1, 2, 4] as const).map((s) => (
               <button key={s} onClick={() => set({ speed: s })} className={`px-1.5 py-1 ${speed === s ? 'bg-elevated text-ion' : 'text-muted'}`} aria-pressed={speed === s}>{s}×</button>
             ))}
           </div>
         </div>
-        <div className="label">Init {cycleLabel(init)}</div>
+        <div className="label hidden sm:block">Init {cycleLabel(init)}</div>
       </div>
 
       <div className="relative min-w-0 flex-1">
@@ -154,7 +154,7 @@ export function TimeRibbon() {
         </svg>
       </div>
 
-      <div className="flex w-44 shrink-0 flex-col justify-center border-l hairline pl-3">
+      <div className="flex w-[118px] shrink-0 flex-col justify-center border-l hairline pl-2 sm:w-44 sm:pl-3">
         <div className="label">T+{shown} h {hover != null && hover !== leadH ? '(preview)' : ''}</div>
         <div className="num text-sm">{fmtUtc(addHours(init, shown))}</div>
         <div className="num text-xs text-muted">{fmtIst(addHours(init, shown))}</div>

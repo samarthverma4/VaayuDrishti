@@ -22,14 +22,14 @@ export default function App() {
             <EventList />
           </aside>
         )}
-        <main className="relative flex min-w-0 flex-1 flex-col">
+        <main className="relative flex min-w-0 flex-1 flex-col pb-14 md:pb-0">
           <div className="relative min-h-0 flex-1">
             <MapCanvas />
             {section === 'evolution' && <StabilityLens />}
             <LayerControl />
             <button
               onClick={() => set({ panelOpen: !panelOpen })}
-              className="absolute right-3 top-3 z-20 hidden h-8 w-8 place-items-center rounded border hairline bg-abyss/85 text-muted hover:text-ink lg:grid"
+              className="absolute right-3 top-3 z-20 grid h-8 w-8 place-items-center rounded border hairline bg-abyss/85 text-muted hover:text-ink"
               aria-label={panelOpen ? 'Collapse the intelligence panel' : 'Open the intelligence panel'}
             >
               {panelOpen ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />}
@@ -41,7 +41,7 @@ export default function App() {
         </main>
         {panelOpen && (
           <aside
-            className="fixed inset-x-0 bottom-[64px] z-30 max-h-[55vh] overflow-y-auto border-t hairline bg-ocean scroll-thin lg:static lg:max-h-none lg:w-[400px] lg:shrink-0 lg:border-l lg:border-t-0"
+            className="fixed inset-x-0 bottom-[120px] z-30 max-h-[40vh] overflow-y-auto border-t hairline bg-ocean scroll-thin md:bottom-[64px] md:max-h-[50vh] lg:static lg:max-h-none lg:w-[400px] lg:shrink-0 lg:border-l lg:border-t-0"
             aria-label="Intelligence panel"
           >
             <Panel />

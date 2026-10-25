@@ -79,12 +79,14 @@ def efi(ens_values, clim_quantiles, levels=None) -> float:
     ens = np.sort(np.asarray(ens_values, float))
     levels = np.linspace(0.01, 0.99, len(clim_quantiles)) if levels is None else np.asarray(levels, float)
     q = np.asarray(clim_quantiles, float)
-    ff = np.searchsorted(ens, q, side="left") / len(ens)
-    integrand = (levels - ff) / np.sqrt(levels * (1 - levels))
-    # integrate on the p grid with the trapezoid rule, extended to [0, 1] by the end values
-    p = np.concatenate([[0.0], levels, [1.0]])
-    f = np.concatenate([[integrand[0]], integrand, [integrand[-1]]])
-    return float(np.clip(2 / np.pi * np.trapezoid(f, p), -1, 1))
+    # Substitute p = sin^2(t): dp / sqrt(p(1-p)) = 2 dt, which removes the end-point singularities.
+    # EFI = (4/pi) * integral over t in [0, pi/2] of (p - F_f(p)) dt. Climate quantiles between the
+    # given levels are interpolated linearly and held constant beyond the end levels.
+    t = np.linspace(0, np.pi / 2, 2001)
+    p = np.sin(t) ** 2
+    qp = np.interp(p, levels, q)
+    ff = np.searchsorted(ens, qp, side="left") / len(ens)
+    return float(np.clip(4 / np.pi * np.trapezoid(p - ff, t), -1, 1))
 
 
 def sot(ens_values, clim_q90: float, clim_q99: float) -> float | None:

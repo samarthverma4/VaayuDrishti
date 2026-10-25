@@ -190,7 +190,7 @@ export function MapCanvas() {
         </div>
       )}
       {validTime && (
-        <div className="pointer-events-none absolute left-3 top-3 z-10 rounded border hairline bg-abyss/80 px-2.5 py-1.5">
+        <div className="pointer-events-none absolute left-3 top-3 z-10 hidden rounded border hairline bg-abyss/80 px-2.5 py-1.5 md:block">
           <div className="label">Valid</div>
           <div className="num text-sm">{fmtUtc(validTime)}</div>
           <div className="num text-xs text-muted">{fmtIst(validTime)}</div>

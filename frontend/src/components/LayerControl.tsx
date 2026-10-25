@@ -17,7 +17,7 @@ export function LayerControl() {
   const grad = `linear-gradient(90deg, ${legend.stops.map((s, i) => `rgba(${s.rgba[0]},${s.rgba[1]},${s.rgba[2]},${Math.max(s.rgba[3] / 255, 0.15)}) ${(i / (legend.stops.length - 1)) * 100}%`).join(',')})`
 
   return (
-    <div className="absolute right-14 top-3 z-10 w-[236px] rounded border hairline bg-abyss/90 text-xs backdrop-blur-sm">
+    <div className="absolute right-12 top-3 z-10 w-[200px] md:w-[236px] rounded border hairline bg-abyss/90 text-xs backdrop-blur-sm">
       <button className="flex w-full items-center justify-between px-2.5 py-1.5" onClick={() => setOpen(!open)} aria-expanded={open}>
         <span className="flex items-center gap-1.5 font-display font-medium"><Layers size={13} /> Layers</span>
         <span className="label">{layer === 'none' ? 'off' : LAYER_LABEL[layer]}</span>

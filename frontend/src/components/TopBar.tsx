@@ -21,7 +21,7 @@ export function TopBar() {
       <div className="ml-auto flex min-w-0 items-center gap-3 text-xs">
         {prov && (
           <>
-            <ModeBadge mode={prov.mode} />
+            <span className="hidden sm:inline"><ModeBadge mode={prov.mode} /></span>
             <span className="hidden num text-muted md:inline" title={prov.source}>
               {prov.model} · {prov.members} members · {prov.grid_deg}°
             </span>
