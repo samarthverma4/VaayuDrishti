@@ -1,0 +1,113 @@
+@import 'tailwindcss';
+@import 'maplibre-gl/dist/maplibre-gl.css';
+@import '@fontsource/space-grotesk/400.css';
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/600.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+
+@theme {
+  --color-abyss: #080f1c;
+  --color-ocean: #101d2b;
+  --color-slate: #192937;
+  --color-elevated: #223443;
+  --color-ink: #f2f5f4;
+  --color-muted: #94a8b6;
+  --color-line: #314554;
+  --color-ion: #66dce7;
+  --color-blue: #397fe8;
+  --color-teal: #39bca7;
+  --color-amber: #f3b85c;
+  --color-coral: #ef6b61;
+  --color-magenta: #d85797;
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: var(--color-abyss);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.hairline {
+  border-color: var(--color-line);
+}
+
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line) transparent;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-ion);
+  outline-offset: 2px;
+}
+
+.maplibregl-ctrl-attrib {
+  background: rgb(8 15 28 / 0.75) !important;
+  color: var(--color-muted) !important;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+.maplibregl-ctrl-attrib a {
+  color: var(--color-muted) !important;
+}
+.maplibregl-ctrl-group {
+  background: var(--color-ocean) !important;
+  border: 1px solid var(--color-line);
+  box-shadow: none !important;
+}
+.maplibregl-ctrl-group button + button {
+  border-top-color: var(--color-line) !important;
+}
+.maplibregl-ctrl-group button span {
+  filter: invert(1) opacity(0.7);
+}
+.maplibregl-popup-content {
+  background: var(--color-ocean);
+  color: var(--color-ink);
+  border: 1px solid var(--color-line);
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.maplibregl-popup-tip {
+  border-top-color: var(--color-line) !important;
+  border-bottom-color: var(--color-line) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

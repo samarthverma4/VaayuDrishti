@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "/Users/samarthverma/vyomtra/.venv/bin/uvicorn",
+      "runtimeArgs": ["backend.app.main:app", "--port", "8000", "--app-dir", "/Users/samarthverma/vyomtra"],
+      "port": 8000
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "/Users/samarthverma/vyomtra/frontend", "run", "dev", "--", "--port", "5180"],
+      "port": 5180
+    }
+  ]
+}

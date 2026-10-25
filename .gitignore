@@ -9,3 +9,4 @@ logs/
 frontend/node_modules/
 frontend/dist/
 .DS_Store
+frontend/public/maplibre-gl-worker.mjs

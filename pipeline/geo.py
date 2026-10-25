@@ -21,7 +21,7 @@ from pipeline.config import ARTIFACTS, RAW
 
 GEO_RAW = RAW / "geo"
 GEO_OUT = ARTIFACTS / "geo"
-MAP_BBOX = (45.0, -5.0, 105.0, 40.0)  # lon_min, lat_min, lon_max, lat_max
+MAP_BBOX = (35.0, -15.0, 125.0, 45.0)  # lon_min, lat_min, lon_max, lat_max
 
 
 DOWNLOADS = {

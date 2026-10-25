@@ -164,9 +164,13 @@ def get_isobars(event_id: str, cycle: str, lead_h: int | None = None):
 
 @app.get(f"{API}/events/{{event_id}}/cycles/{{cycle}}/districts")
 def get_districts(event_id: str, cycle: str,
-                  hazard: Literal["heavy", "very_heavy", "extremely_heavy", "strike"] = "very_heavy",
+                  hazard: Literal["heavy", "very_heavy", "extremely_heavy", "strike"] | None = None,
                   window: int | None = Query(None, ge=0), min_p: float = Query(0.0, ge=0, le=1)):
+    """All districts with any ensemble signal; with `hazard`, filtered and sorted by its probability."""
     data = read_json(cycle_dir(event_id, cycle) / "districts.json", "district table", "Cycle not processed")
+    if hazard is None:
+        return respond({"windows": data["windows"], "hazard": None, "rows": data["rows"],
+                        "definitions": data["definitions"]}, provenance(event_id, cycle))
     rows = []
     for r in data["rows"]:
         series = r["p_strike"] if hazard == "strike" else r.get("p_rain", {}).get(hazard)
