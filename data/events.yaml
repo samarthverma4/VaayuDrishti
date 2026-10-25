@@ -1,0 +1,42 @@
+# Case studies. Storm ids are IBTrACS SIDs; everything else (dates, landfall, region)
+# is derived from IBTrACS and the forecast archive at build time, never typed in here.
+#
+# ensemble_source:
+#   ecmwf-ifs-ens  ECMWF IFS ENS from the open archive (inits from 2024-04-01 only)
+#   tigge          needs a TIGGE download (see README); shown as best track until loaded
+events:
+  - id: dana-2024
+    sid: 2024295N15092
+    name: Dana
+    basin: Bay of Bengal
+    ensemble_source: ecmwf-ifs-ens
+  - id: fengal-2024
+    sid: 2024329N04089
+    name: Fengal
+    basin: Bay of Bengal
+    ensemble_source: ecmwf-ifs-ens
+  - id: montha-2025
+    sid: 2025298N11089
+    name: Montha
+    basin: Bay of Bengal
+    ensemble_source: ecmwf-ifs-ens
+  - id: remal-2024
+    sid: 2024145N14087
+    name: Remal
+    basin: Bay of Bengal
+    ensemble_source: ecmwf-ifs-ens
+  - id: shakhti-2025
+    sid: 2025275N22068
+    name: Shakhti
+    basin: Arabian Sea
+    ensemble_source: ecmwf-ifs-ens
+  - id: biparjoy-2023
+    sid: 2023156N10067
+    name: Biparjoy
+    basin: Arabian Sea
+    ensemble_source: tigge
+  - id: michaung-2023
+    sid: 2023334N08088
+    name: Michaung
+    basin: Bay of Bengal
+    ensemble_source: tigge

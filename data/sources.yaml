@@ -1,0 +1,122 @@
+# Source registry. The Data page and Model Observatory render this file.
+# verified_on: date the facts were checked against the provider's own page (null = unverified).
+sources:
+  - id: ecmwf-ifs-ens
+    name: ECMWF IFS ENS (via dynamical.org archive of ECMWF Open Data)
+    institution: ECMWF; archive by dynamical.org
+    role: Ensemble forecasts for replay cases and the current run
+    grid: 0.25° regular lat/lon (model ~9 km)
+    members: 51 (control + 50 perturbed)
+    horizon: 15 days; 3-hourly to T+144, 6-hourly to T+360
+    cycles: 00 UTC only in the archive
+    archive_start: "2024-04-01"
+    latency: Daily; open data keeps only the latest 12 runs online
+    licence: CC BY 4.0 + ECMWF Terms of Use
+    access: Anonymous Icechunk/Zarr on AWS S3 (us-west-2)
+    variables_used: MSLP, 10 m u/v wind, precipitation rate
+    status: in use
+    verified_by: provider pages (ecmwf.int open data; dynamical.org catalog)
+    verified_on: "2026-10-26"
+    url: https://dynamical.org/catalog/ecmwf-ifs-ens-forecast-15-day-0-25-degree/
+  - id: ibtracs
+    name: IBTrACS v04r01, North Indian basin
+    institution: NOAA NCEI (RSMC New Delhi fixes)
+    role: Observed best tracks, landfall, verification truth
+    grid: 3-hourly fixes
+    members: n/a
+    horizon: n/a
+    cycles: Updated three times a week (usually Sun, Tue, Thu)
+    archive_start: "1842"
+    latency: Days; recent storms may be revised
+    licence: Public domain (NOAA)
+    access: Anonymous CSV download
+    variables_used: Position, RSMC New Delhi wind and pressure, distance to land
+    status: in use
+    verified_by: ncei.noaa.gov IBTrACS product page
+    verified_on: "2026-10-26"
+    url: https://www.ncei.noaa.gov/products/international-best-track-archive
+  - id: tigge
+    name: TIGGE archive (ECMWF Data Store)
+    institution: ECMWF with 13 contributing centres
+    role: 2023 cases (Biparjoy, Michaung) and Indian ensembles (NEPS-G, IMD GEFS)
+    grid: Varies by centre and date; TIGGE common grid (0.25° surface, 0.5° upper air) since 2026-10-01
+    members: ECMWF 50+1; NCMRWF NEPS-G 22+1; IMD GEFS 20+1
+    horizon: 10-15 days
+    cycles: 00/12 UTC
+    archive_start: "2006-10"
+    latency: 48 h after initial time
+    licence: CC BY 4.0 (ECMWF) / CC BY-NC 4.0 (NCMRWF, IMD and others)
+    access: Registered account, queued requests
+    variables_used: MSLP, 10 m u/v wind, total precipitation
+    status: loader implemented; data not yet downloaded
+    verified_by: CDS TIGGE licence; confluence TIGGE Models page
+    verified_on: "2026-10-26"
+    url: https://ecds.ecmwf.int/datasets/tigge-forecasts
+  - id: aifs-ens
+    name: ECMWF AIFS ENS v2
+    institution: ECMWF
+    role: Planned AI-ensemble comparison (current runs only)
+    grid: 0.25°
+    members: 51
+    horizon: 15 days, 6-hourly
+    cycles: 00/06/12/18 UTC
+    archive_start: "2025-07-01"
+    latency: Released as produced; open data keeps latest 12 runs
+    licence: CC BY 4.0
+    access: ECMWF Open Data
+    variables_used: none yet
+    status: not integrated
+    verified_by: ecmwf.int AIFS data page
+    verified_on: "2026-10-26"
+    url: https://www.ecmwf.int/en/forecasts/datasets/aifs-machine-learning-data
+  - id: era5
+    name: ERA5 reanalysis
+    institution: ECMWF / Copernicus C3S
+    role: Planned climate reference for EFI-proxy and SOT
+    grid: 0.25°
+    members: n/a
+    horizon: n/a
+    cycles: hourly
+    archive_start: "1940"
+    latency: 5 days (ERA5T)
+    licence: Copernicus licence
+    access: Registered CDS account
+    variables_used: none yet
+    status: not integrated (needs a CDS account)
+    verified_by: climate.copernicus.eu
+    verified_on: "2026-10-26"
+    url: https://cds.climate.copernicus.eu
+  - id: imd-rain
+    name: IMD 0.25° daily gridded rainfall
+    institution: India Meteorological Department, Pune
+    role: Planned rainfall verification truth
+    grid: 0.25° (135 x 129), 6.5-38.5° N, 66.5-100° E
+    members: n/a
+    horizon: n/a
+    cycles: daily
+    archive_start: "1901"
+    latency: 1901-2024 final; 2025 provisional
+    licence: IMD data-supply terms
+    access: Download page (imdpune.gov.in)
+    variables_used: none yet
+    status: not integrated
+    verified_by: imdpune.gov.in Rainfall_25_NetCDF page
+    verified_on: "2026-10-26"
+    url: https://www.imdpune.gov.in/cmpg/Griddata/Rainfall_25_NetCDF.html
+  - id: boundaries
+    name: Boundaries
+    institution: Natural Earth (India point of view, public domain); geoBoundaries IND ADM1 (CC BY 2.5 IN, DataMeet/ECI) and ADM2 (ODbL 1.0, lgdirectory.gov.in, 2021)
+    role: Basemap, landfall detection, district aggregation
+    grid: vector
+    members: n/a
+    horizon: n/a
+    cycles: n/a
+    archive_start: n/a
+    latency: Districts as of 2021 (735 units)
+    licence: Public domain / CC BY 2.5 IN / ODbL 1.0
+    access: Anonymous download
+    variables_used: country, state, district polygons; land; coastline
+    status: in use
+    verified_by: geoboundaries.org API metadata
+    verified_on: "2026-10-26"
+    url: https://www.geoboundaries.org
