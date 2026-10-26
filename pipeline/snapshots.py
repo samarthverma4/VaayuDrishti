@@ -67,8 +67,8 @@ def build_for_event(ev) -> list[dict]:
     for path in sorted(TIGGE_DIR.rglob("*.grib")):
         for meta, lats, lons, vals in _messages(path):
             t = pd.Timestamp(f"{meta['dataDate']}") + pd.Timedelta(hours=int(meta["dataTime"]) // 100)
-            if not (ev.start <= t <= ev.end):
-                continue
+            if not (ev.start <= t <= ev.end) or any(s["valid_time"] == t.isoformat() for s in out):
+                continue  # outside the storm, or the same field already taken from an earlier file
             k = int(np.argmin(vals))
             bt = interpolate_track(ev.track, pd.DatetimeIndex([t])).iloc[0]
             obs = ev.track[ev.track.time == t]
@@ -104,4 +104,4 @@ def build_for_event(ev) -> list[dict]:
                 "not_available": "No forecast lead times, no ensemble members, no wind or rainfall: tracking, spread, probabilities and verification need the full TIGGE download.",
             })
             log.info("%s: snapshot %s from %s", ev.id, t, path.name)
-    return out
+    return sorted(out, key=lambda s: s["valid_time"])

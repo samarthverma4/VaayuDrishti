@@ -19,7 +19,8 @@ DEFINITIONS = {
     "efi": "EFI-proxy for 24 h rain: how far the whole ensemble distribution sits above the ERA5 climate "
            f"({era5_clim.CLIM_YEARS.start}-{era5_clim.CLIM_YEARS.stop - 1}, ±{era5_clim.HALF_WINDOW_D} days) for the cell and date. "
            "0 = like climate, 1 = every member beyond the climate maximum; 0.5 is commonly read as unusual, 0.8 as very unusual. "
-           "Not a probability. Dry-day climate quantiles are left out of the integral.",
+           "Not a probability, and not an amount: in a dry season a modest total can score high, so read it with the rain layers. "
+           "Dry-day climate quantiles are left out of the integral.",
     "sot": "Shift of Tails for 24 h rain: > 0 when the ensemble's 90th percentile exceeds the ERA5 climate's 99th; "
            "larger values mean a more extreme tail. Shown where the climate's 90th and 99th percentiles differ by at least 0.1 mm.",
 }

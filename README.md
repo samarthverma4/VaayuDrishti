@@ -22,7 +22,7 @@ drafts for India, and shows how well past forecasts did against observed best tr
 | CAP 1.2 draft export, validated against the OASIS schema | Working | |
 | GeoJSON / CSV export, shareable URLs | Working | |
 | Biparjoy, Michaung (2023) | Best track only; Biparjoy also shows one TIGGE MSLP analysis (12 Jun 2023 00 UTC, isobars and model low vs best track) | Ensemble needs the full TIGGE download (loader implemented, see below) |
-| EFI-proxy / SOT and the Extremeness Profile | Formulas implemented and tested; not wired to data | Needs ERA5 climate (CDS account) |
+| EFI-proxy and Shift of Tails for 24 h rain (map layers, district EFI) | Working | ERA5 1993-2022, ±15 days, via the WeatherBench 2 public copy (no account) |
 | Rainfall verification vs IMD (MAE, bias, POD, FAR, CSI, Brier, FSS by lead day) | Working | IMD Pune 0.25° gridded daily rainfall, 2023-2025 |
 | NEPS-G, IMD GEFS, AIFS ENS comparison | Not built | TIGGE account / AIFS open-data ingest |
 | Spherical GNN, diffusion downscaling, physics loss | Roadmap only | |
@@ -40,6 +40,7 @@ python -m pipeline.geo              # boundaries + CAP schema (about 25 MB)
 python -m pipeline.fetch            # ECMWF ENS for the case studies (about 3.5 GB, 15 min)
 python -m pipeline.fetch --latest   # newest 00 UTC run over India
 python -m pipeline.fetch_imd        # IMD 0.25° gridded rainfall for the case-study years (about 25 MB a year)
+python -m pipeline.fetch_era5       # ERA5 rain climate for the EFI-proxy (about 14 GB transferred, 500 MB kept, ~1 h)
 python -m pipeline.build            # tracks, fields, districts, verification (about 80 s)
 ```
 
@@ -114,7 +115,7 @@ of cycles, not skill statistics.
 ## Tests
 
 ```bash
-pytest                                     # 42 tests: definitions, tracker on synthetic storms, API contracts, CAP schema
+pytest                                     # 46 tests: definitions, tracker on synthetic storms, API contracts, CAP schema
 cd frontend && npx playwright test         # browser smoke tests (needs the dev server and API running)
 node frontend/scripts/shots.mjs docs/figures   # screenshots of every view
 ```
@@ -123,6 +124,7 @@ node frontend/scripts/shots.mjs docs/figures   # screenshots of every view
 
 - ECMWF IFS ENS open data: CC BY 4.0 (ECMWF Terms of Use), archive by dynamical.org.
 - IBTrACS: NOAA NCEI, public domain.
+- ERA5: Copernicus Climate Change Service (C3S), Copernicus licence; read from the WeatherBench 2 public copy.
 - IMD gridded rainfall: India Meteorological Department, Pune (Pai et al. 2014, MAUSAM 65); free download for research.
 - Natural Earth (India point-of-view boundaries): public domain.
 - geoBoundaries IND ADM1 (CC BY 2.5 IN, DataMeet / ECI) and ADM2 (ODbL 1.0, lgdirectory.gov.in).

@@ -63,7 +63,8 @@ export function MapCanvas() {
   // single-field snapshot (e.g. one TIGGE analysis) for events without a forecast cycle
   const noCycles = !!event.data && event.data.cycles_ready === 0
   const snaps = useSnapshots(eventId, noCycles && !!event.data?.snapshots?.length)
-  const snap = noCycles ? snaps.data?.snapshots[0] : undefined
+  const snapIdx = useStore((st) => st.snapshot)
+  const snap = noCycles ? (snaps.data?.snapshots[snapIdx] ?? snaps.data?.snapshots[0]) : undefined
   useCycleLayers(map, ready, { tracks: tracks.data, eventId, cycle, layerUrl, bounds: fields.data?.bounds, fallbackIsobars: snap?.isobars })
   useEffect(() => {
     if (!map || !ready) return

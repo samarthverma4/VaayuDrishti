@@ -21,6 +21,7 @@ interface State {
   compareA: string | null
   compareB: string | null
   divider: number // 0..1 for the stability lens swipe
+  snapshot: number // index of the single-field TIGGE snapshot shown for storms without forecast cycles
   panelOpen: boolean
   set: (p: Partial<State>) => void
   selectEvent: (id: string | null, cycle?: string | null) => void
@@ -61,10 +62,11 @@ export const useStore = create<State>((set) => ({
   compareA: null,
   compareB: null,
   divider: 0.5,
+  snapshot: 0,
   panelOpen: true,
   set: (p) => set(p),
   selectEvent: (id, cycle = null) =>
-    set({ eventId: id, cycle, leadH: 0, playing: false, member: null, compareA: null, compareB: null, districtId: null }),
+    set({ eventId: id, cycle, leadH: 0, playing: false, member: null, compareA: null, compareB: null, districtId: null, snapshot: 0 }),
 }))
 
 useStore.subscribe((st) => {

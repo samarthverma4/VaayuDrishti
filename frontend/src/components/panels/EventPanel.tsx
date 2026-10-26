@@ -151,35 +151,47 @@ export function EventPanel() {
 /** One TIGGE control-forecast MSLP field at T+0, compared with the best track. Not a forecast. */
 function SnapshotCard({ eventId }: { eventId: string }) {
   const q = useSnapshots(eventId, true)
-  if (q.isLoading) return <Loading what="TIGGE snapshot" />
+  const { snapshot, set } = useStore()
+  if (q.isLoading) return <Loading what="TIGGE snapshots" />
   if (q.error) return <Problem error={q.error} />
+  const all = q.data!.snapshots
+  const s = all[snapshot] ?? all[0]
   return (
-    <>
-      {q.data!.snapshots.map((s) => (
-        <div key={s.id} className="mt-4 rounded border hairline p-3" data-testid="tigge-snapshot">
-          <H aside={<span className="num">{fmtUtc(s.valid_time)}</span>}>TIGGE snapshot</H>
-          <p className="text-[11px] leading-snug text-muted">{s.kind}, {s.variable}. Isobars on the map; teal ring marks the model's pressure minimum.</p>
-          <div className="mt-2 grid grid-cols-2 gap-3">
-            <Stat label="Model MSLP minimum" value={`${s.model_min.msl_hpa.toFixed(1)} hPa`} sub={latlon(s.model_min.lat, s.model_min.lon)} tone="text-teal" />
-            <Stat label="Observed (IBTrACS)" value={s.observed?.pres_hpa != null ? `${s.observed.pres_hpa} hPa` : 'n/a'}
-              sub={s.observed ? `${latlon(s.observed.lat, s.observed.lon)}${s.observed.wind_kt != null ? ` · ${s.observed.wind_kt} kt` : ''}${s.observed.exact_fix ? '' : ' · interpolated'}` : 'outside best track'} />
-            <Stat label="Position difference" value={km(s.distance_km)} sub="model low to best-track fix" />
-            <Stat label="Field range" value={`${s.field_range_hpa[0]}–${s.field_range_hpa[1]} hPa`} sub={`${s.coverage.lat[0]}–${s.coverage.lat[1]}°N, ${s.coverage.lon[0]}–${s.coverage.lon[1]}°E`} />
-          </div>
-          <p className="mt-2 text-[11px] leading-snug">{s.not_available}</p>
-          <details className="mt-2 text-[10px] text-muted">
-            <summary className="cursor-pointer">Provenance</summary>
-            <div className="num mt-1 space-y-0.5 break-all">
-              <div>{s.provenance.source} · {s.provenance.licence}</div>
-              <div>{s.provenance.file} ({(s.provenance.bytes / 1024).toFixed(1)} KB, downloaded {fmtUtc(s.provenance.downloaded_at)})</div>
-              <div>sha256 {s.provenance.sha256}</div>
-              <div>GRIB: centre {String(s.provenance.grib.centre)}, class {String(s.provenance.grib.marsClass)}, stream {String(s.provenance.grib.marsStream)}, type {String(s.provenance.grib.marsType)}, grid {String(s.provenance.grib.gridType)} N{String(s.provenance.grib.N)}, {String(s.provenance.grib.numberOfDataPoints)} points</div>
-              <div>{s.isobar_note}</div>
-            </div>
-          </details>
+    <div className="mt-4 rounded border hairline p-3" data-testid="tigge-snapshot">
+      <H aside={<span className="num">{all.length > 1 ? `${all.length} times` : fmtUtc(s.valid_time)}</span>}>TIGGE snapshot</H>
+      <p className="text-[11px] leading-snug text-muted">{s.kind}, {s.variable}. Isobars on the map; teal ring marks the model's pressure minimum.</p>
+      {all.length > 1 && (
+        <div className="mt-2 flex flex-wrap gap-1" role="group" aria-label="Snapshot time">
+          {all.map((x, i) => (
+            <button key={x.id} onClick={() => set({ snapshot: i })} aria-pressed={x.id === s.id}
+              className={`rounded-sm border px-1.5 py-0.5 num text-[10px] ${x.id === s.id ? 'border-ion text-ion' : 'hairline text-muted'}`}>
+              {fmtDate(x.valid_time).slice(0, 6)}
+            </button>
+          ))}
         </div>
-      ))}
-    </>
+      )}
+      <div className="mt-2 grid grid-cols-2 gap-3">
+        <Stat label={`Model MSLP minimum · ${fmtUtc(s.valid_time)}`} value={`${s.model_min.msl_hpa.toFixed(1)} hPa`} sub={latlon(s.model_min.lat, s.model_min.lon)} tone="text-teal" />
+        <Stat label="Observed (IBTrACS)" value={s.observed?.pres_hpa != null ? `${s.observed.pres_hpa} hPa` : 'n/a'}
+          sub={s.observed ? `${latlon(s.observed.lat, s.observed.lon)}${s.observed.wind_kt != null ? ` · ${s.observed.wind_kt} kt` : ''}${s.observed.exact_fix ? '' : ' · interpolated'}` : 'outside best track'} />
+        <Stat label="Position difference" value={km(s.distance_km)} sub="model low to best-track fix" />
+        <Stat label="Field range" value={`${s.field_range_hpa[0]}–${s.field_range_hpa[1]} hPa`} sub={`${s.coverage.lat[0]}–${s.coverage.lat[1]}°N, ${s.coverage.lon[0]}–${s.coverage.lon[1]}°E`} />
+      </div>
+      {all.length > 1 && (
+        <p className="mt-2 num text-[10px] text-muted">Position difference by time: {all.map((x) => `${fmtDate(x.valid_time).slice(0, 6)} ${km(x.distance_km)}`).join(' · ')}</p>
+      )}
+      <p className="mt-2 text-[11px] leading-snug">{s.not_available}</p>
+      <details className="mt-2 text-[10px] text-muted">
+        <summary className="cursor-pointer">Provenance</summary>
+        <div className="num mt-1 space-y-0.5 break-all">
+          <div>{s.provenance.source} · {s.provenance.licence}</div>
+          <div>{s.provenance.file} ({(s.provenance.bytes / 1024).toFixed(1)} KB, downloaded {fmtUtc(s.provenance.downloaded_at)})</div>
+          <div>sha256 {s.provenance.sha256}</div>
+          <div>GRIB: centre {String(s.provenance.grib.centre)}, class {String(s.provenance.grib.marsClass)}, stream {String(s.provenance.grib.marsStream)}, type {String(s.provenance.grib.marsType)}, grid {String(s.provenance.grib.gridType)} N{String(s.provenance.grib.N)}, {String(s.provenance.grib.numberOfDataPoints)} points</div>
+          <div>{s.isobar_note}</div>
+        </div>
+      </details>
+    </div>
   )
 }
 

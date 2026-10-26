@@ -67,3 +67,25 @@ test('map renders the forecast layer without errors', async ({ page }) => {
   await png
   expect(errors).toEqual([])
 })
+
+test('EFI-proxy layer is offered and credits the ERA5 climate', async ({ page, request }) => {
+  const f = await (await request.get('/api/v1/events/fengal-2024/cycles/2024113000/fields')).json()
+  test.skip(!f.layers?.efi, 'ERA5 climate not built')
+  await page.goto('/#s=events&e=fengal-2024&c=2024113000&t=12')
+  await page.getByRole('button', { name: /Layers/ }).click()
+  await page.getByText('Extreme rain index (EFI-proxy)').click()
+  await expect(page.getByText(/Climate: ERA5/)).toBeVisible()
+  const png = await request.get(f.layers.efi[0])
+  expect(png.status(), png.url()).toBe(200)
+  expect(png.headers()['content-type']).toBe('image/png')
+})
+
+test('snapshot time picker switches the card', async ({ page, request }) => {
+  const r = await request.get('/api/v1/events/biparjoy-2023/snapshots')
+  const snaps = r.status() === 200 ? (await r.json()).snapshots : []
+  test.skip(snaps.length < 2, 'fewer than two snapshots')
+  await page.goto('/#s=events&e=biparjoy-2023')
+  const card = page.getByTestId('tigge-snapshot')
+  await card.getByRole('group', { name: 'Snapshot time' }).getByRole('button').last().click()
+  await expect(card).toContainText(`${snaps.at(-1).model_min.msl_hpa.toFixed(1)} hPa`)
+})
