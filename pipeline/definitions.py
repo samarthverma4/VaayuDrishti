@@ -98,6 +98,39 @@ def sot(ens_values, clim_q90: float, clim_q99: float) -> float | None:
     return float((qf90 - clim_q99) / (clim_q99 - clim_q90))
 
 
+def efi_grid(ens: np.ndarray, clim: np.ndarray, n_t: int = 401, dry_mm: float | None = None, block: int = 2048) -> np.ndarray:
+    """EFI for many cells at once, the same integral as `efi`.
+
+    ens: (member, cell) forecast values; clim: (sample, cell) climate values. Climate quantiles at
+    1..99 % are taken from the samples. With `dry_mm`, the part of the integral where the climate
+    quantile is at or below dry_mm is set to zero: for rainfall, tied dry-day quantiles say nothing
+    about how wet a forecast is, and counting them would bias the index. Returns (cell,) in -1..1.
+    """
+    levels = np.linspace(0.01, 0.99, 99)
+    q = np.quantile(clim, levels, axis=0)  # (99, cell)
+    t = np.linspace(0, np.pi / 2, n_t)
+    p = np.sin(t) ** 2
+    W = np.stack([np.interp(p, levels, np.eye(99)[j]) for j in range(99)], axis=1)  # (n_t, 99)
+    out = np.empty(ens.shape[1], np.float32)
+    for s in range(0, ens.shape[1], block):
+        qp = W @ q[:, s:s + block]  # (n_t, cell)
+        ff = (ens[None, :, s:s + block] < qp[:, None, :]).mean(axis=1)
+        integrand = p[:, None] - ff
+        if dry_mm is not None:
+            integrand = np.where(qp <= dry_mm, 0.0, integrand)
+        out[s:s + block] = np.clip(4 / np.pi * np.trapezoid(integrand, t, axis=0), -1, 1)
+    return out
+
+
+def sot_grid(ens: np.ndarray, clim: np.ndarray, min_spread: float = 0.1) -> np.ndarray:
+    """Shift of Tails per cell (as `sot`); NaN where the climate's 90th and 99th percentiles differ by < min_spread."""
+    qf90 = np.percentile(ens, 90, axis=0)
+    qc90, qc99 = np.quantile(clim, [0.9, 0.99], axis=0)
+    d = qc99 - qc90
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return np.where(d >= min_spread, (qf90 - qc99) / d, np.nan).astype(np.float32)
+
+
 def utc_to_ist_iso(ts) -> str:
     import pandas as pd
 

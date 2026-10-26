@@ -173,7 +173,7 @@ function DistrictDetail({ id }: { id: string }) {
               : <>No member meets {HAZARD_LABEL[hazard].toLowerCase()} here; other hazards may still show a signal.</>}
           </p>
           <table className="mt-2 w-full text-xs">
-            <thead><tr className="label"><th className="text-left font-normal">Window</th><th className="text-right font-normal">≥64.5</th><th className="text-right font-normal">≥115.6</th><th className="text-right font-normal">≥204.5</th><th className="text-right font-normal">Track</th><th className="text-right font-normal">Rain p10–p90</th></tr></thead>
+            <thead><tr className="label"><th className="text-left font-normal">Window</th><th className="text-right font-normal">≥64.5</th><th className="text-right font-normal">≥115.6</th><th className="text-right font-normal">≥204.5</th><th className="text-right font-normal">Track</th><th className="text-right font-normal">Rain p10–p90</th>{r.efi_max && <th className="text-right font-normal" title="Highest EFI-proxy (24 h rain vs ERA5 climate) over the district in the window; 0.5 unusual, 0.8 very unusual">EFI</th>}</tr></thead>
             <tbody>
               {d.windows.map((w) => {
                 const any = r.p_rain.heavy[w.index] > 0 || (r.p_strike?.[w.index] ?? 0) > 0
@@ -186,6 +186,7 @@ function DistrictDetail({ id }: { id: string }) {
                     <td className="text-right num">{pct(r.p_rain.extremely_heavy[w.index])}</td>
                     <td className="text-right num">{r.p_strike ? pct(r.p_strike[w.index]) : 'n/a'}</td>
                     <td className="text-right num">{Math.round(r.rain_mm.p10[w.index])}–{Math.round(r.rain_mm.p90[w.index])} mm</td>
+                    {r.efi_max && <td className={`text-right num ${r.efi_max[w.index] >= 0.8 ? 'text-coral' : r.efi_max[w.index] >= 0.5 ? 'text-amber' : ''}`}>{r.efi_max[w.index].toFixed(2)}</td>}
                   </tr>
                 )
               })}

@@ -80,7 +80,7 @@ def strike_table(members: list[dict], windows: list[tuple[int, int]], district_i
 
 
 def build_table(rain: np.ndarray | None, windows: list[tuple[int, int]], cells: dict[str, np.ndarray],
-                members: list[dict] | None, center: tuple[float, float]) -> list[dict]:
+                members: list[dict] | None, center: tuple[float, float], efi: np.ndarray | None = None) -> list[dict]:
     d = geo.districts().set_index("id")
     rt = rain_table(rain, cells) if rain is not None else {}
     ids = list(cells)
@@ -92,6 +92,9 @@ def build_table(rain: np.ndarray | None, windows: list[tuple[int, int]], cells: 
         signal = max([max(v) for v in r.get("p_rain", {}).values()] + ([max(s)] if s else []) + [0])
         if signal <= 0:
             continue
-        rows.append({"id": did, "name": d.loc[did, "name"], "state": d.loc[did, "state"],
-                     "p_strike": s, **r})
+        row = {"id": did, "name": d.loc[did, "name"], "state": d.loc[did, "state"], "p_strike": s, **r}
+        if efi is not None:
+            # highest EFI-proxy over the district's cells, per window
+            row["efi_max"] = np.round(np.nan_to_num(efi.reshape(efi.shape[0], -1)[:, cells[did]].max(axis=1), nan=0.0), 2).tolist()
+        rows.append(row)
     return rows

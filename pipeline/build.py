@@ -19,7 +19,7 @@ from scipy import ndimage
 
 from pipeline import districts as dist
 from pipeline import events as ev_mod
-from pipeline import fields, geo, rain_verify, snapshots, verify
+from pipeline import extremes, fields, geo, rain_verify, snapshots, verify
 from pipeline.config import ARTIFACTS, DATA, DOMAIN
 from pipeline.definitions import haversine_km, imd_category, utc_to_ist_iso
 from pipeline.ensemble import strike_probability, summarize, trim_over_land
@@ -103,12 +103,23 @@ def process_cycle(ds: xr.Dataset, init: pd.Timestamp, out: Path, bbox: dict, mem
             p = out / "png" / f"strike_w{w}.png"
             fields.write_png(sp[w], lats, p, "prob")
             layers["strike"].append(p.relative_to(out).as_posix())
+    ext = extremes.for_cycle(rain, windows, init, lats, lons)
+    if ext is not None:
+        for key in ("efi", "sot"):
+            layers[key] = []
+            for w in range(len(windows)):
+                p = out / "png" / f"{key}_w{w}.png"
+                fields.write_png(ext[key][w], lats, p, key)
+                layers[key].append(p.relative_to(out).as_posix())
     _write({
         "bounds": fields.image_bounds(lats, lons),
         "windows": win_meta,
         "layers": layers,
-        "legends": {"prob": fields.legend("prob"), "rain": fields.legend("rain")},
-        "definitions": {
+        "legends": {k: fields.legend(k) for k in ("prob", "rain", "efi", "sot")},
+        "climate": None if ext is None else {"source": extremes.era5_clim.SOURCE, "licence": extremes.era5_clim.LICENCE,
+                                             "years": [extremes.era5_clim.CLIM_YEARS.start, extremes.era5_clim.CLIM_YEARS.stop - 1],
+                                             "half_window_days": extremes.era5_clim.HALF_WINDOW_D},
+        "definitions": {**extremes.DEFINITIONS,
             "p_heavy": "Fraction of members with 24 h rain ≥ 64.5 mm in the cell",
             "p_very_heavy": "Fraction of members with 24 h rain ≥ 115.6 mm in the cell",
             "p_extremely_heavy": "Fraction of members with 24 h rain ≥ 204.5 mm in the cell",
@@ -125,11 +136,13 @@ def process_cycle(ds: xr.Dataset, init: pd.Timestamp, out: Path, bbox: dict, mem
     # districts
     cells = dist.cell_index(lats, lons, bbox)
     center = ((bbox["lat_min"] + bbox["lat_max"]) / 2, (bbox["lon_min"] + bbox["lon_max"]) / 2)
-    rows = dist.build_table(rain, windows, cells, tracks["members"] if tracks else None, center)
+    rows = dist.build_table(rain, windows, cells, tracks["members"] if tracks else None, center,
+                            ext["efi"] if ext is not None else None)
     _write({"windows": win_meta, "rows": rows, "definitions": {
         "p_rain": "Fraction of members in which at least one 0.25° cell in the district reaches the IMD threshold in the 24 h window",
         "rain_mm": "10th/50th/90th percentile across members of the district's wettest cell (mm per 24 h)",
         "p_strike": "Fraction of members whose cyclone track passes within 120 km of the district boundary in the window",
+        "efi_max": "Highest EFI-proxy (24 h rain, vs ERA5 climate) over the district's 0.25° cells in the window",
     }}, out / "districts.json")
 
     ver = None

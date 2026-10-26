@@ -49,6 +49,8 @@ export const LAYER_LABEL: Record<string, string> = {
   p_very_heavy: 'P(rain ≥ 115.6 mm)',
   p_extremely_heavy: 'P(rain ≥ 204.5 mm)',
   rain_mean: 'Ensemble-mean rain',
+  efi: 'Extreme rain index (EFI-proxy)',
+  sot: 'Shift of Tails (rain)',
 }
 
 // probability band for non-colour encoding

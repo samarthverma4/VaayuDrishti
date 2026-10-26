@@ -48,3 +48,23 @@ def test_imd_categories(kt, code):
 
 def test_ist_conversion():
     assert utc_to_ist_iso(pd.Timestamp("2024-10-24T21:00")) == "2024-10-25T02:30+05:30"
+
+
+def test_efi_grid_matches_scalar_and_handles_dry_ties():
+    from pipeline.definitions import efi_grid, sot_grid
+
+    rng = np.random.default_rng(1)
+    clim = rng.gamma(0.6, 15, (930, 40))
+    clim[clim < 1] = 0  # many dry days, as in real rainfall climates
+    ens = np.stack([rng.gamma(0.6, 15 * s, 51) for s in np.linspace(0.3, 6, 40)], axis=1)
+    levels = np.linspace(0.01, 0.99, 99)
+    scalar = [efi(ens[:, i], np.quantile(clim[:, i], levels)) for i in range(40)]
+    assert np.allclose(efi_grid(ens, clim), scalar, atol=0.005)
+    # wetter ensembles score higher
+    g = efi_grid(ens, clim, dry_mm=0.0)
+    assert g[-1] > 0.4 and g[0] < 0
+    # members drawn from the climate itself: masking dry ties removes most of the bias
+    same = clim[rng.choice(930, 51, replace=False)]
+    assert abs(efi_grid(same, clim, dry_mm=0.0).mean()) < abs(efi_grid(same, clim).mean())
+    s = sot_grid(ens, clim)
+    assert s[-1] > s[0]

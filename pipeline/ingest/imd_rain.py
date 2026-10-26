@@ -24,6 +24,7 @@ LONS = np.round(np.arange(66.5, 100.0 + 1e-6, 0.25), 2)
 DAY_END_UTC_H = 3
 URL = "https://imdpune.gov.in/cmpg/Griddata/rainfall.php"
 SOURCE = "IMD Pune gridded daily rainfall, 0.25° (Pai et al. 2014)"
+FINAL_THROUGH = 2024  # IMD's NetCDF page (checked 2026-10-26) lists 1901-2024; later years appear only as binary downloads
 
 
 def path(year: int) -> Path:
@@ -60,4 +61,5 @@ def provenance(year: int) -> dict:
     return {"file": f"data/raw/imd/{p.name}", "bytes": p.stat().st_size,
             "sha256": hashlib.sha256(p.read_bytes()).hexdigest(),
             "downloaded_at": pd.Timestamp(p.stat().st_mtime, unit="s").isoformat(), "source": SOURCE,
+            "status": "in IMD's published 1901-2024 archive" if year <= FINAL_THROUGH else "binary download only, not yet in IMD's published 1901-2024 archive; may be revised",
             "url": "https://imdpune.gov.in/cmpg/Griddata/Rainfall_25_Bin.html"}

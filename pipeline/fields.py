@@ -51,13 +51,21 @@ PROB_STOPS = [(0.0, (57, 188, 167, 0)), (0.1, (57, 188, 167, 120)), (0.3, (102, 
 RAIN_STOPS = [(0.0, (68, 1, 84, 0)), (10, (59, 82, 139, 110)), (35, (33, 145, 140, 160)),
               (64.5, (94, 201, 98, 190)), (115.6, (253, 231, 37, 215)), (204.5, (255, 255, 255, 235))]
 
+# EFI: transparent below 0.3, ECMWF's usual "unusual" (0.5) and "very unusual" (0.8) marks highlighted.
+EFI_STOPS = [(0.3, (102, 220, 231, 0)), (0.5, (243, 184, 92, 170)), (0.8, (239, 107, 97, 215)), (1.0, (216, 87, 151, 240))]
+# SOT: transparent below 0 (ensemble 90th percentile under the climate 99th).
+SOT_STOPS = [(0.0, (243, 184, 92, 0)), (0.5, (243, 184, 92, 160)), (1.5, (239, 107, 97, 210)), (3.0, (216, 87, 151, 240))]
+STOPS = {"prob": PROB_STOPS, "rain": RAIN_STOPS, "efi": EFI_STOPS, "sot": SOT_STOPS}
+UNITS = {"prob": "fraction of members", "rain": "mm per 24 h", "efi": "Extreme Forecast Index (-1 to 1)",
+         "sot": "Shift of Tails (> 0: ensemble 90th percentile beyond the climate 99th)"}
+
 
 def _ramp(values: np.ndarray, stops) -> np.ndarray:
     xs = np.array([s[0] for s in stops], float)
     cs = np.array([s[1] for s in stops], float)
     v = np.nan_to_num(values, nan=xs[0])
     rgba = np.stack([np.interp(v, xs, cs[:, c]) for c in range(4)], axis=-1)
-    rgba[np.isnan(values)] = 0
+    rgba[np.isnan(values) | (v < xs[0])] = 0
     return rgba.astype(np.uint8)
 
 
@@ -95,15 +103,13 @@ def image_bounds(lats: np.ndarray, lons: np.ndarray) -> list[list[float]]:
 
 
 def write_png(field: np.ndarray, lats: np.ndarray, path: Path, kind: str) -> None:
-    rgba = _ramp(to_mercator_rows(field, lats), PROB_STOPS if kind == "prob" else RAIN_STOPS)
+    rgba = _ramp(to_mercator_rows(field, lats), STOPS[kind])
     path.parent.mkdir(parents=True, exist_ok=True)
     Image.fromarray(rgba, "RGBA").save(path, optimize=True)
 
 
 def legend(kind: str) -> dict:
-    stops = PROB_STOPS if kind == "prob" else RAIN_STOPS
-    return {"kind": kind, "units": "fraction of members" if kind == "prob" else "mm per 24 h",
-            "stops": [{"value": v, "rgba": list(c)} for v, c in stops]}
+    return {"kind": kind, "units": UNITS[kind], "stops": [{"value": v, "rgba": list(c)} for v, c in STOPS[kind]]}
 
 
 def isobars(msl_hpa: np.ndarray, lats: np.ndarray, lons: np.ndarray, interval: float = 2.0) -> dict:

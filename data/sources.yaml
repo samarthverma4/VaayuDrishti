@@ -72,7 +72,7 @@ sources:
   - id: era5
     name: ERA5 reanalysis
     institution: ECMWF / Copernicus C3S
-    role: Planned climate reference for EFI-proxy and SOT
+    role: Climate reference for the EFI-proxy and SOT (24 h rain, 1993-2022, ±15 days)
     grid: 0.25°
     members: n/a
     horizon: n/a
@@ -80,26 +80,26 @@ sources:
     archive_start: "1940"
     latency: 5 days (ERA5T)
     licence: Copernicus licence
-    access: Registered CDS account
-    variables_used: none yet
-    status: not integrated (needs a CDS account)
+    access: WeatherBench 2 public copy on Google Cloud (gs://weatherbench2, no account); CDS for the original
+    variables_used: total_precipitation_24hr at 00 UTC
+    status: integrated
     verified_by: climate.copernicus.eu
     verified_on: "2026-10-26"
     url: https://cds.climate.copernicus.eu
   - id: imd-rain
     name: IMD 0.25° daily gridded rainfall
     institution: India Meteorological Department, Pune
-    role: Planned rainfall verification truth
+    role: Rainfall verification truth
     grid: 0.25° (135 x 129), 6.5-38.5° N, 66.5-100° E
     members: n/a
     horizon: n/a
     cycles: daily
     archive_start: "1901"
-    latency: 1901-2024 final; 2025 provisional
+    latency: NetCDF page lists 1901-2024; the binary page also offers 2025
     licence: IMD data-supply terms
-    access: Download page (imdpune.gov.in)
-    variables_used: none yet
-    status: not integrated
+    access: Download page (imdpune.gov.in), binary .grd per year; python -m pipeline.fetch_imd
+    variables_used: daily rainfall 2023-2025
+    status: integrated (2025 is a binary download not yet in the 1901-2024 published list)
     verified_by: imdpune.gov.in Rainfall_25_NetCDF page
     verified_on: "2026-10-26"
     url: https://www.imdpune.gov.in/cmpg/Griddata/Rainfall_25_NetCDF.html

@@ -12,7 +12,8 @@ export function LayerControl() {
   const [open, setOpen] = useState(false)
   if (!fields.data) return null
   const keys = Object.keys(fields.data.layers) as LayerKey[]
-  const legend = layer === 'rain_mean' ? fields.data.legends.rain : fields.data.legends.prob
+  const kind = layer === 'rain_mean' ? 'rain' : layer === 'efi' || layer === 'sot' ? layer : 'prob'
+  const legend = fields.data.legends[kind] ?? fields.data.legends.prob!
   const w = fields.data.windows[windowForLead(fields.data, leadH)]
   const grad = `linear-gradient(90deg, ${legend.stops.map((s, i) => `rgba(${s.rgba[0]},${s.rgba[1]},${s.rgba[2]},${Math.max(s.rgba[3] / 255, 0.15)}) ${(i / (legend.stops.length - 1)) * 100}%`).join(',')})`
 
@@ -52,6 +53,9 @@ export function LayerControl() {
                 ))}
               </div>
               <p className="mt-1 text-[10px] leading-snug text-muted">{fields.data.definitions[layer]}</p>
+              {(layer === 'efi' || layer === 'sot') && fields.data.climate && (
+                <p className="mt-1 text-[10px] leading-snug text-muted">Climate: {fields.data.climate.source}, {fields.data.climate.years[0]}–{fields.data.climate.years[1]}. {fields.data.climate.licence}.</p>
+              )}
               {w && <p className="mt-1 num text-[10px] text-muted">Window {fmtUtc(w.valid_start)} → {fmtUtc(w.valid_end)}</p>}
             </div>
           )}

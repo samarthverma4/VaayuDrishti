@@ -68,6 +68,7 @@ export function RainVerification({ eventId, cycle, event }: { eventId: string; c
               <p className="mt-2 text-[10px] leading-snug text-muted">
                 mm per 24 h. {d.area}. {d.yes_rule[0].toUpperCase() + d.yes_rule.slice(1)}. Day 1 is the first full IMD day after the run starts.
                 Hover a row for counts and the Brier score. Truth: {d.truth}.
+                {d.observations.some((o) => o.status?.startsWith('binary download only')) && <> <span className="text-amber">This year's IMD grid is a binary download not yet in IMD's published 1901–2024 archive; it may be revised.</span></>}
               </p>
               {d.skipped.length > 0 && (
                 <details className="mt-1 text-[10px] text-muted">
@@ -78,7 +79,7 @@ export function RainVerification({ eventId, cycle, event }: { eventId: string; c
               <details className="mt-1 text-[10px] text-muted">
                 <summary className="cursor-pointer">Observation provenance</summary>
                 {d.observations.map((p) => (
-                  <div key={p.file} className="num mt-1 break-all">{p.file} · {(p.bytes / 1e6).toFixed(1)} MB · sha256 {p.sha256} · {p.url}</div>
+                  <div key={p.file} className="num mt-1 break-all">{p.file} · {p.status} · {(p.bytes / 1e6).toFixed(1)} MB · sha256 {p.sha256} · {p.url}</div>
                 ))}
               </details>
             </>

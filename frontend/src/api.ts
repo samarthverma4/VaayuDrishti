@@ -128,12 +128,13 @@ export interface Tracks {
 }
 
 export interface Window { index: number; start_h: number; end_h: number; valid_start: string; valid_end: string }
-export type LayerKey = 'strike' | 'p_heavy' | 'p_very_heavy' | 'p_extremely_heavy' | 'rain_mean'
+export type LayerKey = 'strike' | 'p_heavy' | 'p_very_heavy' | 'p_extremely_heavy' | 'rain_mean' | 'efi' | 'sot'
 export interface Fields {
   bounds: [number, number][]
   windows: Window[]
   layers: Partial<Record<LayerKey, string[]>>
-  legends: Record<'prob' | 'rain', { kind: string; units: string; stops: { value: number; rgba: number[] }[] }>
+  legends: Partial<Record<'prob' | 'rain' | 'efi' | 'sot', { kind: string; units: string; stops: { value: number; rgba: number[] }[] }>>
+  climate?: { source: string; licence: string; years: [number, number]; half_window_days: number } | null
   definitions: Record<string, string>
   provenance: Provenance
 }
@@ -144,6 +145,7 @@ export interface DistrictRow {
   p_strike: number[] | null
   p_rain: Record<'heavy' | 'very_heavy' | 'extremely_heavy', number[]>
   rain_mm: Record<'p10' | 'p50' | 'p90', number[]>
+  efi_max?: number[]
   p?: number
 }
 export interface Districts { windows: Window[]; rows: DistrictRow[]; definitions: Record<string, string>; provenance: Provenance }
@@ -157,7 +159,7 @@ export interface RainDay {
 export interface RainVerification {
   init: string; days: RainDay[]; skipped: { date: string; reason: string }[]
   truth: string; area: string; yes_rule: string; fss_scales_cells: number[]; cell_deg: number
-  observations: { file: string; sha256: string; bytes: number; downloaded_at: string; source: string; url: string }[]
+  observations: { file: string; sha256: string; bytes: number; downloaded_at: string; source: string; url: string; status?: string }[]
 }
 export interface RainLeadSummary { lead_day: number; n_days: number; mae_mm: number; bias_mm: number; thresholds: Record<string, RainScores> }
 
