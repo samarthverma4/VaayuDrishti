@@ -1,85 +1,163 @@
-"""TIGGE GRIB2 loader (ECMWF Data Store downloads) for cases before the open archive starts.
+"""TIGGE GRIB loader (ECMWF Data Store downloads) for cases before the open archive starts.
 
-Place files under data/raw/tigge/<event_id>/ named <origin>_*.grib (pipeline.fetch_tigge does this), containing
-control (type=cf) and perturbed (type=pf) forecasts with: msl, 10u, 10v and tp
-(total precipitation, accumulated from step 0). See README "Loading TIGGE data" for the
-exact request. Returns the same normalized schema as ecmwf_ens.load, or None when the
-files for that cycle are absent.
+Files live in data/raw/tigge/<event_id>/<origin>_<cf|pf>_<yyyymm>.grib (pipeline.fetch_tigge writes them)
+and hold control and perturbed forecasts of msl, 10u, 10v and tp (accumulated from step 0).
+
+On first use each event is converted once: every field is read a single time, regridded when it comes
+on ECMWF's reduced Gaussian grid (linear interpolation onto 0.25 degree, the grid used elsewhere in
+VYOMTRA), split by initial time and cached as Zarr in data/cache/tigge/. `load` then returns the same
+normalised schema as ecmwf_ens.load, or None when that cycle is absent.
 """
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import xarray as xr
+from scipy.spatial import Delaunay, cKDTree
 
-from pipeline.config import MAX_LEAD_H, RAW
+from pipeline.config import CACHE, MAX_LEAD_H, RAW
 
 log = logging.getLogger(__name__)
 TIGGE_DIR = RAW / "tigge"
+TIGGE_CACHE = CACHE / "tigge"
+GRID_DEG = 0.25
+FIELDS = (("msl", "msl"), ("10u", "u10"), ("10v", "v10"), ("tp", "tp"))
+MODEL_NAMES = {"ecmwf": "ECMWF IFS ENS", "ncmrwf": "NCMRWF NEPS-G", "imd": "IMD GEFS"}
+
+
+def _paths(event_id: str, origin: str) -> list[Path]:
+    folder = TIGGE_DIR / event_id
+    return sorted([*folder.glob(f"{origin}_*.grib"), *folder.glob(f"{origin}_*.grib2")]) if folder.exists() else []
 
 
 def _open(paths, type_: str, short: str) -> xr.DataArray | None:
-    try:
-        parts = [xr.open_dataset(p, engine="cfgrib", backend_kwargs={
-            "filter_by_keys": {"dataType": type_, "shortName": short}, "indexpath": ""}) for p in paths]
-    except Exception as exc:  # noqa: BLE001 - a file lacking this field is normal
-        log.debug("cfgrib %s %s: %s", type_, short, exc)
-        return None
-    parts = [p for p in parts if p.data_vars]
+    parts = []
+    for p in paths:
+        try:
+            ds = xr.open_dataset(p, engine="cfgrib", backend_kwargs={
+                "filter_by_keys": {"dataType": type_, "shortName": short}, "indexpath": ""})
+        except Exception as exc:  # noqa: BLE001 - a file lacking this field is normal
+            log.debug("cfgrib %s %s %s: %s", p.name, type_, short, exc)
+            continue
+        if ds.data_vars:
+            parts.append(ds)
     if not parts:
         return None
-    ds = xr.combine_by_coords(parts, combine_attrs="drop_conflicts")
+    ds = xr.combine_by_coords(parts, combine_attrs="drop_conflicts") if len(parts) > 1 else parts[0]
     da = ds[list(ds.data_vars)[0]]
     if "number" not in da.dims:
-        da = da.expand_dims(number=[0])
+        da = da.expand_dims(number=[int(da.coords["number"]) if "number" in da.coords else 0])
+    if "time" not in da.dims:
+        da = da.expand_dims(time=[da.time.values])
     return da
 
 
-def load(event_id: str, init: pd.Timestamp, bbox: dict, origin: str = "ecmwf") -> xr.Dataset | None:
-    folder = TIGGE_DIR / event_id
-    paths = sorted([*folder.glob(f"{origin}_*.grib"), *folder.glob(f"{origin}_*.grib2")]) if folder.exists() else []
+class _Regridder:
+    """Linear (barycentric) interpolation from scattered grid points to a regular lat/lon grid.
+    Target points outside the source hull (box edges) take the nearest source value."""
+
+    def __init__(self, src_lat, src_lon, lats, lons):
+        glat, glon = np.meshgrid(lats, lons, indexing="ij")
+        tri = Delaunay(np.column_stack([src_lon, src_lat]))
+        target = np.column_stack([glon.ravel(), glat.ravel()])
+        simplex = tri.find_simplex(target)
+        self.valid = simplex >= 0
+        T = tri.transform[simplex[self.valid]]
+        b = np.einsum("nij,nj->ni", T[:, :2], target[self.valid] - T[:, 2])
+        self.weights = np.column_stack([b, 1 - b.sum(axis=1)])
+        self.vertices = tri.simplices[simplex[self.valid]]
+        self.nearest = cKDTree(np.column_stack([src_lon, src_lat])).query(target[~self.valid])[1]
+        self.shape = glat.shape
+
+    def __call__(self, values: np.ndarray) -> np.ndarray:
+        """values: (..., n_src) -> (..., ny, nx)"""
+        out = np.full(values.shape[:-1] + (self.shape[0] * self.shape[1],), np.nan, np.float32)
+        out[..., self.valid] = np.einsum("...nk,nk->...n", values[..., self.vertices], self.weights)
+        out[..., ~self.valid] = values[..., self.nearest]
+        return out.reshape(values.shape[:-1] + self.shape)
+
+
+def _target_grid(bbox: dict) -> tuple[np.ndarray, np.ndarray]:
+    lats = np.arange(bbox["lat_max"], bbox["lat_min"] - 1e-6, -GRID_DEG)
+    lons = np.arange(bbox["lon_min"], bbox["lon_max"] + 1e-6, GRID_DEG)
+    return lats, lons
+
+
+def _cache_path(event_id: str, origin: str, init: pd.Timestamp) -> Path:
+    return TIGGE_CACHE / event_id / f"{origin}_{init:%Y%m%dT%H}.zarr"
+
+
+def prepare(event_id: str, bbox: dict, origin: str = "ecmwf") -> list[pd.Timestamp]:
+    """Convert the event's GRIB files to one normalised Zarr per initial time. Returns the inits written."""
+    paths = _paths(event_id, origin)
     if not paths:
-        return None
+        return []
     try:
         import cfgrib  # noqa: F401
     except ImportError:
-        log.warning("TIGGE files present but cfgrib is not installed: uv pip install -e '.[grib]'")
-        return None
-    fields = {}
-    for short, name in (("msl", "msl"), ("10u", "u10"), ("10v", "v10"), ("tp", "tp")):
+        log.warning("TIGGE files present but cfgrib is not installed: uv pip install cfgrib eccodes eccodeslib")
+        return []
+    lats, lons = _target_grid(bbox)
+    raw: dict[str, xr.DataArray] = {}
+    for short, name in FIELDS:
         arrs = [a for a in (_open(paths, "cf", short), _open(paths, "pf", short)) if a is not None]
         if not arrs:
+            log.warning("%s: no %s in %s", event_id, short, [p.name for p in paths])
+            return []
+        raw[name] = xr.concat(arrs, dim="number", join="inner") if len(arrs) > 1 else arrs[0]
+    units_m = raw["tp"].attrs.get("units", raw["tp"].attrs.get("GRIB_units")) == "m"
+    sample = raw["msl"]
+    unstructured = "values" in sample.dims
+    if unstructured:
+        rg = _Regridder(sample.latitude.values, ((sample.longitude.values + 180) % 360) - 180, lats, lons)
+    written = []
+    for t in sample.time.values:
+        init = pd.Timestamp(t)
+        out = _cache_path(event_id, origin, init)
+        if (out / "zarr.json").exists():
+            written.append(init)
+            continue
+        data = {}
+        for name, da in raw.items():
+            da = da.sel(time=t)
+            da = da.sel(step=da.step <= np.timedelta64(MAX_LEAD_H, "h")).transpose("step", "number", ...)
+            vals = da.values.astype(np.float32)
+            if unstructured:
+                grid = rg(vals)
+            else:
+                d2 = da.assign_coords(longitude=((da.longitude + 180) % 360) - 180).sortby("longitude")
+                if d2.latitude.values[0] < d2.latitude.values[-1]:
+                    d2 = d2.isel(latitude=slice(None, None, -1))
+                grid = d2.interp(latitude=lats, longitude=lons).values.astype(np.float32)
+            data[name] = (("lead_h", "member", "lat", "lon"), grid)
+        steps = (sample.sel(time=t).step.values / np.timedelta64(1, "h")).astype(int)
+        steps = steps[steps <= MAX_LEAD_H]
+        ds = xr.Dataset(data, coords={"lead_h": steps, "member": raw["msl"].number.values.astype(int), "lat": lats, "lon": lons})
+        tp = ds.tp * (1000.0 if units_m else 1.0)  # TIGGE: kg m-2; ECMWF dissemination: metres
+        dt = np.diff(steps, prepend=steps[0]) * 3600.0
+        prate = tp.diff("lead_h", label="upper").reindex(lead_h=ds.lead_h) / xr.DataArray(
+            np.where(dt > 0, dt, np.nan), dims="lead_h", coords={"lead_h": ds.lead_h})
+        ds = ds.drop_vars("tp").assign(prate=prate.clip(min=0).astype(np.float32))
+        ds.attrs.update(
+            source=f"TIGGE {origin} (ECMWF Data Store)",
+            licence="CC BY 4.0" if origin == "ecmwf" else "CC BY-NC 4.0",
+            init_time=init.isoformat(), model=f"{MODEL_NAMES.get(origin, origin)} (TIGGE)",
+            regridding="reduced Gaussian to 0.25 deg, linear" if unstructured else "regular grid interpolated to 0.25 deg",
+            retrieved_at=pd.Timestamp(max(p.stat().st_mtime for p in paths), unit="s").isoformat(),
+        )
+        out.parent.mkdir(parents=True, exist_ok=True)
+        ds.to_zarr(out, mode="w", consolidated=False)
+        written.append(init)
+        log.info("%s %s: cached %s", event_id, origin, out.name)
+    return written
+
+
+def load(event_id: str, init: pd.Timestamp, bbox: dict, origin: str = "ecmwf") -> xr.Dataset | None:
+    path = _cache_path(event_id, origin, init)
+    if not (path / "zarr.json").exists():
+        if init not in prepare(event_id, bbox, origin):
             return None
-        da = xr.concat(arrs, dim="number")
-        if "time" in da.dims:
-            if np.datetime64(init) not in da.time.values:
-                return None
-            da = da.sel(time=np.datetime64(init))
-        elif "time" in da.coords and pd.Timestamp(da.time.values) != init:
-            return None
-        fields[name] = da
-    ds = xr.Dataset(fields)
-    ds = ds.rename({"number": "member", "latitude": "lat", "longitude": "lon"})
-    ds = ds.assign_coords(lead_h=("step", (ds.step.values / np.timedelta64(1, "h")).astype(int))).swap_dims({"step": "lead_h"})
-    ds = ds.drop_vars([v for v in ("step", "time", "valid_time", "surface", "heightAboveGround", "meanSea") if v in ds.coords])
-    ds = ds.sel(lead_h=ds.lead_h <= MAX_LEAD_H)
-    if float(ds.lon.max()) > 180:  # 0..360 grids
-        ds = ds.assign_coords(lon=((ds.lon + 180) % 360) - 180).sortby("lon")
-    if ds.lat.values[0] < ds.lat.values[-1]:
-        ds = ds.isel(lat=slice(None, None, -1))
-    ds = ds.sel(lat=slice(bbox["lat_max"], bbox["lat_min"]), lon=slice(bbox["lon_min"], bbox["lon_max"]))
-    # tp is accumulated from step 0: kg m-2 in TIGGE (paramId 228228) but metres in ECMWF's own
-    # dissemination (paramId 228); normalise to mm before converting to the mean rate over each step
-    if fields["tp"].attrs.get("units", fields["tp"].attrs.get("GRIB_units")) == "m":
-        ds["tp"] = ds.tp * 1000.0
-    dt = np.diff(ds.lead_h.values, prepend=ds.lead_h.values[0]) * 3600.0
-    dtp = ds.tp.diff("lead_h", label="upper").reindex(lead_h=ds.lead_h)
-    prate = dtp / xr.DataArray(np.where(dt > 0, dt, np.nan), dims="lead_h", coords={"lead_h": ds.lead_h})
-    ds = ds.drop_vars("tp").assign(prate=prate.clip(min=0))
-    ds = ds.transpose("lead_h", "member", "lat", "lon")
-    names = {"ecmwf": "ECMWF IFS ENS", "ncmrwf": "NCMRWF NEPS-G", "imd": "IMD GEFS"}
-    ds.attrs.update(source=f"TIGGE {origin} (ECMWF Data Store)", licence="CC BY 4.0" if origin == "ecmwf" else "CC BY-NC 4.0",
-                    init_time=init.isoformat(), model=f"{names.get(origin, origin)} (TIGGE)")
-    return ds.load()
+    return xr.open_zarr(path, consolidated=False).load()
