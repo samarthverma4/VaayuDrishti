@@ -1,10 +1,10 @@
-# VYOMTRA
+# VaayuDrishti
 
-**Atmospheric intelligence, made actionable.** VYOMTRA turns ECMWF ensemble forecasts into
+**Atmospheric intelligence, made actionable.** VaayuDrishti turns ECMWF ensemble forecasts into
 cyclone tracks, uncertainty, cross-cycle stability, district-level exposure and CAP advisory
 drafts for India, and shows how well past forecasts did against observed best tracks.
 
-> Experimental decision-support guidance. Not an official IMD warning. VYOMTRA interprets
+> Experimental decision-support guidance. Not an official IMD warning. VaayuDrishti interprets
 > existing forecasts; it does not replace IMD, NCMRWF or ECMWF and never sends alerts.
 
 ## What works today
@@ -54,7 +54,7 @@ or develop with hot reload: `uvicorn backend.app.main:app --port 8000` plus `cd 
 Docker (artifacts mounted, not baked in):
 
 ```bash
-docker build -t vyomtra . && docker run -p 8000:8000 -v "$PWD/artifacts:/app/artifacts" -v "$PWD/data:/app/data" vyomtra
+docker build -t vaayudrishti . && docker run -p 8000:8000 -v "$PWD/artifacts:/app/artifacts" -v "$PWD/data:/app/data" vaayudrishti
 ```
 
 The demo runs fully offline once `artifacts/` exists: the map style, fonts and the MapLibre worker are all local.

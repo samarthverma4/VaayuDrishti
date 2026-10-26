@@ -15,7 +15,7 @@ from pipeline.definitions import IST_OFFSET_H, RAIN_LABELS
 
 NS = "urn:oasis:names:tc:emergency:cap:1.2"
 DISCLAIMER = "Experimental Decision-Support Guidance. Not an Official IMD Warning."
-SENDER = "vyomtra-draft@localhost"
+SENDER = "vaayudrishti-draft@localhost"
 
 
 @lru_cache
@@ -71,7 +71,7 @@ def build(event: dict, cycle: str, hazard_key: str, window: tuple[int, int], dis
     onset, expires = init + pd.Timedelta(hours=window[0]), init + pd.Timedelta(hours=window[1])
     pmax = max(d["p"] for d in districts)
     label = RAIN_LABELS.get(hazard_key, "Cyclone track proximity (within 120 km)")
-    ident = f"vyomtra-{event['id']}-{init:%Y%m%d%H}-{hazard_key}-{uuid.uuid4().hex[:8]}"
+    ident = f"vaayudrishti-{event['id']}-{init:%Y%m%d%H}-{hazard_key}-{uuid.uuid4().hex[:8]}"
 
     root = etree.Element(f"{{{NS}}}alert", nsmap={None: NS})
     _sub(root, "identifier", ident)
@@ -79,7 +79,7 @@ def build(event: dict, cycle: str, hazard_key: str, window: tuple[int, int], dis
     _sub(root, "sent", _cap_time(now))
     _sub(root, "status", "Draft")
     _sub(root, "msgType", "Alert")
-    _sub(root, "source", "VYOMTRA decision-support prototype")
+    _sub(root, "source", "VaayuDrishti decision-support prototype")
     _sub(root, "scope", "Private")
     _sub(root, "addresses", "authorized-forecaster")
     _sub(root, "note", f"{DISCLAIMER} Generated from {provenance['source']}, cycle {init:%Y-%m-%d %H} UTC, {provenance['members']} members.")
@@ -93,7 +93,7 @@ def build(event: dict, cycle: str, hazard_key: str, window: tuple[int, int], dis
     _sub(info, "certainty", _certainty(pmax))
     _sub(info, "onset", _cap_time(onset))
     _sub(info, "expires", _cap_time(expires))
-    _sub(info, "senderName", "VYOMTRA (experimental, non-official)")
+    _sub(info, "senderName", "VaayuDrishti (experimental, non-official)")
     _sub(info, "headline", f"DRAFT: Ensemble guidance for {label.split(' (')[0].lower()} ({event['name']})")
     names = ", ".join(f"{d['name']} ({d['state']})" for d in districts)
     _sub(info, "description",

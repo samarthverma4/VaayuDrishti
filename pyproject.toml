@@ -1,7 +1,7 @@
 [project]
-name = "vyomtra"
+name = "vaayudrishti"
 version = "0.1.0"
-description = "VYOMTRA: ensemble-aware extreme-weather intelligence for India"
+description = "VaayuDrishti: ensemble-aware extreme-weather intelligence for India"
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "numpy>=1.26",

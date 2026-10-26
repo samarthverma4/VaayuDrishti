@@ -20,7 +20,7 @@ export function Wordmark() {
   return (
     <div className="flex items-center gap-2">
       <Mark />
-      <span className="font-display text-[17px] font-semibold tracking-[0.22em]">VYOMTRA</span>
+      <span className="font-display text-[17px] font-semibold tracking-[0.04em]">VaayuDrishti</span>
     </div>
   )
 }

@@ -1,4 +1,4 @@
-// Typed client for the VYOMTRA API. Every number shown in the UI comes from these responses.
+// Typed client for the VaayuDrishti API. Every number shown in the UI comes from these responses.
 
 export type Category = { code: string; label: string } | null
 
@@ -189,7 +189,7 @@ async function get<T>(path: string): Promise<T> {
   try {
     res = await fetch(BASE + path)
   } catch {
-    throw new ApiError(0, { missing: 'API connection', why: 'The VYOMTRA API is not reachable. Start it with: uvicorn backend.app.main:app --port 8000', available: null }, 'offline')
+    throw new ApiError(0, { missing: 'API connection', why: 'The VaayuDrishti API is not reachable. Start it with: uvicorn backend.app.main:app --port 8000', available: null }, 'offline')
   }
   if (!res.ok) {
     const body = await res.json().catch(() => null)

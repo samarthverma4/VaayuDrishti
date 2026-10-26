@@ -25,7 +25,7 @@ export function AtmospherePanel() {
       <section>
         <H aside="Overview">Atmospheric Signals</H>
         <p className="text-sm leading-relaxed text-muted">
-          VYOMTRA turns ECMWF ensemble forecasts into tracks, probabilities and district exposure. Select a cyclone on the map
+          VaayuDrishti turns ECMWF ensemble forecasts into tracks, probabilities and district exposure. Select a cyclone on the map
           or in the list to replay how its forecast evolved, or open the latest run.
         </p>
       </section>
@@ -87,7 +87,7 @@ export function AtmospherePanel() {
       </section>
 
       <section className="text-[11px] leading-relaxed text-muted">
-        <H>How to read VYOMTRA</H>
+        <H>How to read VaayuDrishti</H>
         <p><b className="text-ink">Probability</b> is the fraction of ensemble members meeting a stated condition. <b className="text-ink">Spread</b> is how far members sit from the ensemble mean. <b className="text-ink">Severity</b> is shown in physical units. They are never merged into one score.</p>
       </section>
     </>

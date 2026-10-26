@@ -44,7 +44,7 @@ export function EvolutionPanel() {
   return (
     <>
       <section>
-        <H aside="VYOMTRA diagnostic">Forecast Stability Lens</H>
+        <H aside="VaayuDrishti diagnostic">Forecast Stability Lens</H>
         <p className="text-sm leading-relaxed text-muted">Drag the divider on the map: cycle A on the left, cycle B on the right, both shown at the same valid time.</p>
         <div className="mt-3 grid grid-cols-2 gap-3">
           <label className="text-xs">

@@ -1,1 +1,1 @@
-"""VYOMTRA offline processing pipeline."""
+"""VaayuDrishti offline processing pipeline."""

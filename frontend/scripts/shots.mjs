@@ -1,4 +1,4 @@
-// Headless screenshots of VYOMTRA views (dev server must be running on :5180).
+// Headless screenshots of VaayuDrishti views (dev server must be running on :5180).
 //   node scripts/shots.mjs [outDir] [name=hash ...]
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'

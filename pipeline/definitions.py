@@ -1,4 +1,4 @@
-"""Scientific definitions used everywhere in VYOMTRA. Import from here; never redefine."""
+"""Scientific definitions used everywhere in VaayuDrishti. Import from here; never redefine."""
 from __future__ import annotations
 
 import numpy as np

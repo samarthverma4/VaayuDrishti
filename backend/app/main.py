@@ -1,4 +1,4 @@
-"""VYOMTRA API: read-only over precomputed artifacts, plus CAP draft generation.
+"""VaayuDrishti API: read-only over precomputed artifacts, plus CAP draft generation.
 
 Run: uvicorn backend.app.main:app --port 8000
 """
@@ -27,7 +27,7 @@ CYCLE_RE = re.compile(r"^(\d{10}|domain|system-\d+)$")
 ID_RE = re.compile(r"^[a-z0-9-]+$")
 
 app = FastAPI(
-    title="VYOMTRA API",
+    title="VaayuDrishti API",
     version="1.0.0",
     description="Ensemble-aware extreme-weather intelligence for India. " + DISCLAIMER,
     docs_url=f"{API}/docs",

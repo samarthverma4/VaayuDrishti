@@ -43,7 +43,7 @@ export function DataPanel() {
         ...(t.envelope ? [{ type: 'Feature', properties: { kind: 'envelope', definition: t.envelope_definition }, geometry: t.envelope }] : []),
       ],
     }
-    save(`vyomtra-${eventId}-${cycle}-tracks.geojson`, JSON.stringify(fc), 'application/geo+json')
+    save(`vaayudrishti-${eventId}-${cycle}-tracks.geojson`, JSON.stringify(fc), 'application/geo+json')
   }
   const exportDistricts = () => {
     const d = table.data!
@@ -51,14 +51,14 @@ export function DataPanel() {
     const lines = [head.join(',')]
     for (const r of d.rows) for (const w of d.windows)
       lines.push([r.id, `"${r.name}"`, `"${r.state}"`, w.valid_start, w.valid_end, r.p_rain.heavy[w.index], r.p_rain.very_heavy[w.index], r.p_rain.extremely_heavy[w.index], r.p_strike?.[w.index] ?? '', r.rain_mm.p10[w.index], r.rain_mm.p50[w.index], r.rain_mm.p90[w.index]].join(','))
-    save(`vyomtra-${eventId}-${cycle}-districts.csv`, lines.join('\n'), 'text/csv')
+    save(`vaayudrishti-${eventId}-${cycle}-districts.csv`, lines.join('\n'), 'text/csv')
   }
 
   return (
     <>
       <section>
         <H aside="CAP 1.2 · Draft">Advisory draft</H>
-        <div className="rounded border border-amber/60 px-2.5 py-2 text-xs text-amber">Experimental Decision-Support Guidance. Not an Official IMD Warning. Drafts are for an authorized forecaster; VYOMTRA never sends alerts.</div>
+        <div className="rounded border border-amber/60 px-2.5 py-2 text-xs text-amber">Experimental Decision-Support Guidance. Not an Official IMD Warning. Drafts are for an authorized forecaster; VaayuDrishti never sends alerts.</div>
         {!eventId || !cycle ? (
           <p className="mt-2 text-sm text-muted">Select an event and cycle first.</p>
         ) : table.isLoading ? <Loading what="districts" /> : table.error ? <Problem error={table.error} /> : (
@@ -120,7 +120,7 @@ export function DataPanel() {
         {cycle && tracks.data && <p className="mt-2 text-[10px] text-muted">Exports carry provenance: {tracks.data.provenance.source}, init {fmtDate(tracks.data.init)}, {tracks.data.provenance.licence}.</p>}
       </section>
 
-      <NotEvaluated what="Validated public dissemination" why="Out of scope by design: VYOMTRA produces drafts only and has no SACHET or public alert integration." />
+      <NotEvaluated what="Validated public dissemination" why="Out of scope by design: VaayuDrishti produces drafts only and has no SACHET or public alert integration." />
     </>
   )
 }

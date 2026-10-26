@@ -58,5 +58,5 @@ def compare(a: dict, b: dict, districts_a: list[dict] | None = None, districts_b
         "by_valid_time": rows,
         "landfall": landfall,
         "districts": district_change,
-        "note": "VYOMTRA diagnostic, not an official index. Positions compared only at identical valid times.",
+        "note": "VaayuDrishti diagnostic, not an official index. Positions compared only at identical valid times.",
     }

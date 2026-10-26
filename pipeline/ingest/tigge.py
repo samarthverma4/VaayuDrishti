@@ -5,7 +5,7 @@ and hold control and perturbed forecasts of msl, 10u, 10v and tp (accumulated fr
 
 On first use each event is converted once: every field is read a single time, regridded when it comes
 on ECMWF's reduced Gaussian grid (linear interpolation onto 0.25 degree, the grid used elsewhere in
-VYOMTRA), split by initial time and cached as Zarr in data/cache/tigge/. `load` then returns the same
+VaayuDrishti), split by initial time and cached as Zarr in data/cache/tigge/. `load` then returns the same
 normalised schema as ecmwf_ens.load, or None when that cycle is absent.
 """
 from __future__ import annotations

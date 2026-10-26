@@ -1,6 +1,6 @@
 import type { StyleSpecification } from '@maplibre/maplibre-gl-style-spec'
 
-// Offline cartographic style built only from VYOMTRA's own boundary files (no tile server).
+// Offline cartographic style built only from VaayuDrishti's own boundary files (no tile server).
 const GEO = '/api/v1/assets/geo'
 
 function graticule(step = 5): GeoJSON.FeatureCollection {

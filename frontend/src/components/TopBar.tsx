@@ -14,7 +14,7 @@ export function TopBar() {
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-4 border-b hairline bg-abyss px-3">
-      <button onClick={() => { useStore.getState().selectEvent(null); set({ section: 'atmosphere' }) }} aria-label="VYOMTRA home">
+      <button onClick={() => { useStore.getState().selectEvent(null); set({ section: 'atmosphere' }) }} aria-label="VaayuDrishti home">
         <Wordmark />
       </button>
       <span className="hidden text-[11px] text-muted xl:inline">Atmospheric intelligence, made actionable</span>
