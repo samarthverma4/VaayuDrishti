@@ -21,7 +21,7 @@ drafts for India, and shows how well past forecasts did against observed best tr
 | Track verification vs IBTrACS (error by lead with n, landfall position and timing) | Working | IBTrACS v04r01, RSMC New Delhi |
 | CAP 1.2 draft export, validated against the OASIS schema | Working | |
 | GeoJSON / CSV export, shareable URLs | Working | |
-| Biparjoy, Michaung (2023) | Best track only | Ensemble needs a TIGGE download (loader implemented, see below) |
+| Biparjoy, Michaung (2023) | Best track only; Biparjoy also shows one TIGGE MSLP analysis (12 Jun 2023 00 UTC, isobars and model low vs best track) | Ensemble needs the full TIGGE download (loader implemented, see below) |
 | EFI-proxy / SOT and the Extremeness Profile | Formulas implemented and tested; not wired to data | Needs ERA5 climate (CDS account) |
 | Rainfall verification (MAE, POD, FAR, FSS) | Not built | Needs IMD gridded rainfall |
 | NEPS-G, IMD GEFS, AIFS ENS comparison | Not built | TIGGE account / AIFS open-data ingest |
@@ -73,6 +73,8 @@ The demo runs fully offline once `artifacts/` exists: the map style, fonts and t
    `python -m pipeline.fetch_tigge` submits them; ECDS queues them, so allow minutes to hours.
 5. `python -m pipeline.build biparjoy-2023 michaung-2023`.
 
+Any control-forecast MSLP field at T+0 under `data/raw/tigge/` (for example the `--probe` file) whose time falls inside an event's best track is also built as a snapshot: isobars plus the model low against IBTrACS, served at `/api/v1/events/{id}/snapshots` with the file's SHA-256 and GRIB keys. The source file is only read.
+
 For NCMRWF NEPS-G use `--origin ncmrwf` (stored separately as `ncmrwf_*.grib`; the comparison view is not built yet).
 
 NCMRWF and IMD data from TIGGE are CC BY-NC 4.0: non-commercial use only.
@@ -107,7 +109,7 @@ of cycles, not skill statistics.
 ## Tests
 
 ```bash
-pytest                                     # 32 tests: definitions, tracker on synthetic storms, API contracts, CAP schema
+pytest                                     # 36 tests: definitions, tracker on synthetic storms, API contracts, CAP schema
 cd frontend && npx playwright test         # browser smoke tests (needs the dev server and API running)
 node frontend/scripts/shots.mjs docs/figures   # screenshots of every view
 ```

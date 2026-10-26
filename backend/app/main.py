@@ -125,6 +125,14 @@ def get_event(event_id: str):
                              "Unknown event or not built yet"))
 
 
+@app.get(f"{API}/events/{{event_id}}/snapshots")
+def get_snapshots(event_id: str):
+    """Single-field model snapshots (e.g. one TIGGE analysis field) attached to an event. Not forecasts."""
+    _check_id(event_id, "event")
+    return respond(read_json(ARTIFACTS / "events" / event_id / "snapshots.json", f"snapshots for {event_id}",
+                             "No single-field TIGGE snapshot has been loaded for this event"))
+
+
 @app.get(f"{API}/events/{{event_id}}/cycles")
 def get_cycles(event_id: str):
     ev = get_event(event_id)

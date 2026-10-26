@@ -1,6 +1,6 @@
 import { addHours, cycleLabel, fmtDate, fmtIst, fmtUtc, km, latlon, pct } from '../../format'
 import { nearestDistrict, useDistrictIndex } from '../../geoIndex'
-import { useSelection } from '../../hooks'
+import { useSelection, useSnapshots } from '../../hooks'
 import { observedAt } from '../../map/data'
 import { useStore } from '../../store'
 import { LineChart } from '../charts'
@@ -46,6 +46,7 @@ export function EventPanel() {
             what="No ensemble forecast loaded for this storm"
             why={`${e.cycles[0]?.reason ?? 'Forecast data missing.'} The observed best track is shown on the map. ECMWF's free open archive starts on 1 Apr 2024; ${e.name}'s forecasts are in the TIGGE archive (registered account, 48 h delay).`}
           />
+          {!!e.snapshots?.length && <SnapshotCard eventId={e.id} />}
         </section>
       ) : !t ? (
         tracks.error ? <Problem error={tracks.error} title="No forecast track in this cycle" /> : <Loading what="ensemble tracks" />
@@ -143,6 +144,41 @@ export function EventPanel() {
         </>
       )}
       {cycle && <div className="num text-[10px] text-muted">Source: {t?.provenance.source ?? 'n/a'} · {t?.provenance.licence}</div>}
+    </>
+  )
+}
+
+/** One TIGGE control-forecast MSLP field at T+0, compared with the best track. Not a forecast. */
+function SnapshotCard({ eventId }: { eventId: string }) {
+  const q = useSnapshots(eventId, true)
+  if (q.isLoading) return <Loading what="TIGGE snapshot" />
+  if (q.error) return <Problem error={q.error} />
+  return (
+    <>
+      {q.data!.snapshots.map((s) => (
+        <div key={s.id} className="mt-4 rounded border hairline p-3" data-testid="tigge-snapshot">
+          <H aside={<span className="num">{fmtUtc(s.valid_time)}</span>}>TIGGE snapshot</H>
+          <p className="text-[11px] leading-snug text-muted">{s.kind}, {s.variable}. Isobars on the map; teal ring marks the model's pressure minimum.</p>
+          <div className="mt-2 grid grid-cols-2 gap-3">
+            <Stat label="Model MSLP minimum" value={`${s.model_min.msl_hpa.toFixed(1)} hPa`} sub={latlon(s.model_min.lat, s.model_min.lon)} tone="text-teal" />
+            <Stat label="Observed (IBTrACS)" value={s.observed?.pres_hpa != null ? `${s.observed.pres_hpa} hPa` : 'n/a'}
+              sub={s.observed ? `${latlon(s.observed.lat, s.observed.lon)}${s.observed.wind_kt != null ? ` · ${s.observed.wind_kt} kt` : ''}${s.observed.exact_fix ? '' : ' · interpolated'}` : 'outside best track'} />
+            <Stat label="Position difference" value={km(s.distance_km)} sub="model low to best-track fix" />
+            <Stat label="Field range" value={`${s.field_range_hpa[0]}–${s.field_range_hpa[1]} hPa`} sub={`${s.coverage.lat[0]}–${s.coverage.lat[1]}°N, ${s.coverage.lon[0]}–${s.coverage.lon[1]}°E`} />
+          </div>
+          <p className="mt-2 text-[11px] leading-snug">{s.not_available}</p>
+          <details className="mt-2 text-[10px] text-muted">
+            <summary className="cursor-pointer">Provenance</summary>
+            <div className="num mt-1 space-y-0.5 break-all">
+              <div>{s.provenance.source} · {s.provenance.licence}</div>
+              <div>{s.provenance.file} ({(s.provenance.bytes / 1024).toFixed(1)} KB, downloaded {fmtUtc(s.provenance.downloaded_at)})</div>
+              <div>sha256 {s.provenance.sha256}</div>
+              <div>GRIB: centre {String(s.provenance.grib.centre)}, class {String(s.provenance.grib.marsClass)}, stream {String(s.provenance.grib.marsStream)}, type {String(s.provenance.grib.marsType)}, grid {String(s.provenance.grib.gridType)} N{String(s.provenance.grib.N)}, {String(s.provenance.grib.numberOfDataPoints)} points</div>
+              <div>{s.isobar_note}</div>
+            </div>
+          </details>
+        </div>
+      ))}
     </>
   )
 }

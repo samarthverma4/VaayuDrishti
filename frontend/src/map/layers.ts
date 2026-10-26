@@ -29,6 +29,7 @@ export function useMapReady(map: MLMap | null) {
 export function useCycleLayers(map: MLMap | null, ready: boolean, opts: {
   tracks?: Tracks; eventId: string | null; cycle: string | null; layerUrl?: string; bounds?: [number, number][]
   leadShiftH?: number // for a later cycle shown at the same valid time: lead = leadH - shift
+  fallbackIsobars?: GeoJSON.FeatureCollection // e.g. a single-field snapshot when no forecast cycle exists
 }) {
   const store = useStore()
   const { mode, showIsobars } = store
@@ -55,9 +56,9 @@ export function useCycleLayers(map: MLMap | null, ready: boolean, opts: {
 
   useEffect(() => {
     if (!map || !ready) return
-    const fc = showIsobars ? isobars.data?.isobars[String(isobarLead(leadH))] : undefined
+    const fc = showIsobars ? (isobars.data?.isobars[String(isobarLead(leadH))] ?? opts.fallbackIsobars) : undefined
     setData(map, 'isobars', fc ?? EMPTY)
-  }, [map, ready, isobars.data, leadH, showIsobars])
+  }, [map, ready, isobars.data, leadH, showIsobars, opts.fallbackIsobars])
 
   useEffect(() => {
     if (!map || !ready) return

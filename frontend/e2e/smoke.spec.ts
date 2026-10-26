@@ -35,3 +35,14 @@ test('best-track-only storm says what is missing', async ({ page }) => {
   await expect(page.getByText('No ensemble forecast loaded for this storm')).toBeVisible()
   await expect(page.getByText(/only the observed best track is available/)).toBeVisible()
 })
+
+test('TIGGE snapshot card shows the model low against the best track', async ({ page, request }) => {
+  const r = await request.get('/api/v1/events/biparjoy-2023/snapshots')
+  test.skip(r.status() === 404, 'no TIGGE snapshot built')
+  const s = (await r.json()).snapshots[0]
+  await page.goto('/#s=events&e=biparjoy-2023')
+  const card = page.getByTestId('tigge-snapshot')
+  await expect(card).toBeVisible()
+  await expect(card).toContainText(`${s.model_min.msl_hpa.toFixed(1)} hPa`)
+  await expect(card).toContainText('No forecast lead times')
+})

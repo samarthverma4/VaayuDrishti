@@ -39,3 +39,6 @@ export function useSelection() {
   const fields = useFields(eventId, effectiveCycle)
   return { index, event, cycle: effectiveCycle, tracks, fields, eventId }
 }
+
+export const useSnapshots = (id: string | null, enabled: boolean) =>
+  useQuery({ queryKey: ['snapshots', id], queryFn: () => api.snapshots(id!), enabled: !!id && enabled })

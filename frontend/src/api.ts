@@ -47,6 +47,7 @@ export interface EventSummary {
   cycles: CycleInfo[]
   cycles_ready: number
   best_track_source: string
+  snapshots?: { id: string; valid_time: string; kind: string; model_min: Snapshot['model_min']; distance_km: number | null }[]
   thumbnail: [number, number][]
 }
 
@@ -61,6 +62,19 @@ export interface BestTrackPoint {
 }
 
 export interface LeadSummary { lead_h: number; n: number; mean_error_km: number | null; mean_spread_km: number | null }
+
+export interface Snapshot {
+  id: string; valid_time: string; valid_time_ist: string; kind: string; variable: string
+  model_min: { lat: number; lon: number; msl_hpa: number }
+  field_range_hpa: [number, number]
+  coverage: { lat: [number, number]; lon: [number, number] }
+  observed: null | { lat: number; lon: number; wind_kt: number | null; pres_hpa: number | null; exact_fix: boolean }
+  distance_km: number | null
+  isobars: GeoJSON.FeatureCollection
+  isobar_note: string
+  provenance: { file: string; sha256: string; bytes: number; downloaded_at: string; source: string; licence: string; grib: Record<string, string | number | null> }
+  not_available: string
+}
 
 export interface EventDetail extends EventSummary {
   best_track: BestTrackPoint[]
@@ -191,6 +205,7 @@ export const api = {
   event: (id: string) => get<EventDetail>(`/events/${id}`),
   tracks: (id: string, cycle: string) => get<Tracks>(`/events/${id}/cycles/${cycle}/tracks`),
   fields: (id: string, cycle: string) => get<Fields>(`/events/${id}/cycles/${cycle}/fields`),
+  snapshots: (id: string) => get<{ snapshots: Snapshot[] }>(`/events/${id}/snapshots`),
   isobars: (id: string, cycle: string) => get<{ isobars: Record<string, GeoJSON.FeatureCollection> }>(`/events/${id}/cycles/${cycle}/isobars`),
   districts: (id: string, cycle: string) => get<Districts>(`/events/${id}/cycles/${cycle}/districts`),
   verification: (id: string, cycle: string) => get<Verification>(`/events/${id}/cycles/${cycle}/verification`),

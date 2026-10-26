@@ -87,3 +87,28 @@ def test_compare_endpoint():
 def test_district_search():
     r = client.get("/api/v1/districts?q=puri")
     assert any(d["name"] == "Puri" for d in r.json()["results"])
+
+
+def test_tigge_snapshot_matches_source_file():
+    """A single-field snapshot keeps its file provenance and makes no forecast claims."""
+    import hashlib
+    from pipeline.config import ROOT
+
+    r = client.get("/api/v1/events/biparjoy-2023/snapshots")
+    if r.status_code == 404:
+        pytest.skip("no TIGGE snapshot built")
+    for s in r.json()["snapshots"]:
+        prov = s["provenance"]
+        path = ROOT / prov["file"]
+        assert path.exists() and path.stat().st_size == prov["bytes"]
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == prov["sha256"]
+        assert prov["grib"]["shortName"] == "msl" and str(prov["grib"]["stepRange"]) == "0"
+        lo, hi = s["field_range_hpa"]
+        assert lo == s["model_min"]["msl_hpa"] and lo < hi
+        assert s["isobars"]["features"] and "not_available" in s
+        assert "tracks" not in s and "members" not in s
+
+
+def test_snapshot_missing_is_descriptive_404():
+    r = client.get("/api/v1/events/no-such-storm/snapshots")
+    assert r.status_code == 404

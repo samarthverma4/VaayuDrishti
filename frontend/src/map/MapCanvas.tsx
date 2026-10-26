@@ -3,7 +3,7 @@ import type { FilterSpecification } from '@maplibre/maplibre-gl-style-spec'
 import type { Map as MLMap, MapMouseEvent } from 'maplibre-gl'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { fmtIst, fmtUtc, addHours } from '../format'
-import { useSelection, useVerification } from '../hooks'
+import { useSelection, useSnapshots, useVerification } from '../hooks'
 import { useStore } from '../store'
 import { boundsOf, overviewFC, verifyLinksFC, windowForLead } from './data'
 import { INDIA, mapRegistry, setData, useCycleLayers, useMapReady } from './layers'
@@ -60,7 +60,15 @@ export function MapCanvas() {
   const w = windowForLead(fields.data, leadH)
   const urls = layer !== 'none' ? fields.data?.layers[layer] : undefined
   const layerUrl = urls?.[Math.min(w, urls.length - 1)]
-  useCycleLayers(map, ready, { tracks: tracks.data, eventId, cycle, layerUrl, bounds: fields.data?.bounds })
+  // single-field snapshot (e.g. one TIGGE analysis) for events without a forecast cycle
+  const noCycles = !!event.data && event.data.cycles_ready === 0
+  const snaps = useSnapshots(eventId, noCycles && !!event.data?.snapshots?.length)
+  const snap = noCycles ? snaps.data?.snapshots[0] : undefined
+  useCycleLayers(map, ready, { tracks: tracks.data, eventId, cycle, layerUrl, bounds: fields.data?.bounds, fallbackIsobars: snap?.isobars })
+  useEffect(() => {
+    if (!map || !ready) return
+    setData(map, 'snapshot', snap ? { type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [snap.model_min.lon, snap.model_min.lat] } }] } : EMPTY)
+  }, [map, ready, snap])
 
   // overview lines when nothing is selected
   const overview = useMemo(() => overviewFC(index.data?.events ?? []), [index.data])

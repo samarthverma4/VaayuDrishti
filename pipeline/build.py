@@ -19,7 +19,7 @@ from scipy import ndimage
 
 from pipeline import districts as dist
 from pipeline import events as ev_mod
-from pipeline import fields, geo, verify
+from pipeline import fields, geo, snapshots, verify
 from pipeline.config import ARTIFACTS, DATA, DOMAIN
 from pipeline.definitions import haversine_km, imd_category, utc_to_ist_iso
 from pipeline.ensemble import strike_probability, summarize, trim_over_land
@@ -187,6 +187,10 @@ def build_event(e: ev_mod.Event) -> dict:
         "best_track_source": "IBTrACS v04r01 (RSMC New Delhi)",
         "thumbnail": [[round(float(r.lon), 2), round(float(r.lat), 2)] for r in e.track.iloc[::2].itertuples()],
     }
+    snaps = snapshots.build_for_event(e)
+    if snaps:
+        _write({"snapshots": snaps}, out / "snapshots.json")
+    summary["snapshots"] = [{k: s[k] for k in ("id", "valid_time", "kind", "model_min", "distance_km")} for s in snaps]
     detail = {**summary, "best_track": _best_track_json(e.track),
               "verification_summary": verify.summary_by_lead(vers) if vers else None,
               "verification_n_cycles": len(vers)}

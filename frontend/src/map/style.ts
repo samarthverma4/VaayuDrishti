@@ -50,6 +50,7 @@ export function baseStyle(): StyleSpecification {
       landfall: { type: 'geojson', data: empty },
       overview: { type: 'geojson', data: empty, promoteId: 'id' },
       verifyLinks: { type: 'geojson', data: empty },
+      snapshot: { type: 'geojson', data: empty },
     },
     layers: [
       { id: 'bg', type: 'background', paint: { 'background-color': '#080F1C' } },
@@ -86,6 +87,7 @@ export function baseStyle(): StyleSpecification {
         'circle-stroke-color': '#080F1C', 'circle-stroke-width': ['match', ['get', 'kind'], 'member', 0, 2],
       } },
       { id: 'best-pos', type: 'circle', source: 'bestPos', paint: { 'circle-radius': 6, 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-color': COLORS.ink, 'circle-stroke-width': 2 } },
+      { id: 'snapshot-min', type: 'circle', source: 'snapshot', paint: { 'circle-radius': 7, 'circle-color': 'rgba(0,0,0,0)', 'circle-stroke-color': COLORS.teal, 'circle-stroke-width': 2.5 } },
       { id: 'mean-pos-halo', type: 'circle', source: 'meanPos', paint: { 'circle-radius': 13, 'circle-color': COLORS.teal, 'circle-opacity': 0.18 } },
       { id: 'mean-pos', type: 'circle', source: 'meanPos', paint: { 'circle-radius': 5.5, 'circle-color': COLORS.teal, 'circle-stroke-color': '#080F1C', 'circle-stroke-width': 2 } },
     ],
