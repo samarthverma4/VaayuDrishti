@@ -70,7 +70,10 @@ def load(event_id: str, init: pd.Timestamp, bbox: dict, origin: str = "ecmwf") -
     if ds.lat.values[0] < ds.lat.values[-1]:
         ds = ds.isel(lat=slice(None, None, -1))
     ds = ds.sel(lat=slice(bbox["lat_max"], bbox["lat_min"]), lon=slice(bbox["lon_min"], bbox["lon_max"]))
-    # tp is accumulated from step 0 (kg m-2); convert to the mean rate over each step
+    # tp is accumulated from step 0: kg m-2 in TIGGE (paramId 228228) but metres in ECMWF's own
+    # dissemination (paramId 228); normalise to mm before converting to the mean rate over each step
+    if fields["tp"].attrs.get("units", fields["tp"].attrs.get("GRIB_units")) == "m":
+        ds["tp"] = ds.tp * 1000.0
     dt = np.diff(ds.lead_h.values, prepend=ds.lead_h.values[0]) * 3600.0
     dtp = ds.tp.diff("lead_h", label="upper").reindex(lead_h=ds.lead_h)
     prate = dtp / xr.DataArray(np.where(dt > 0, dt, np.nan), dims="lead_h", coords={"lead_h": ds.lead_h})
