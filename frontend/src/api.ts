@@ -12,6 +12,7 @@ export interface Provenance {
   members: number
   grid_deg: number
   leads_h: [number, number]
+  lead_steps_h?: number[]
   retrieved_at: string | null
   mode: 'historical-replay' | 'current-forecast'
   generated_at: string

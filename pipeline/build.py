@@ -46,6 +46,7 @@ def _provenance(ds: xr.Dataset, init: pd.Timestamp, source_id: str, mode: str) -
         "members": int(ds.sizes["member"]),
         "grid_deg": round(float(abs(ds.lat.values[1] - ds.lat.values[0])), 4),
         "leads_h": [int(ds.lead_h.values.min()), int(ds.lead_h.values.max())],
+        "lead_steps_h": [int(x) for x in ds.lead_h.values],
         "retrieved_at": ds.attrs.get("retrieved_at"),
         "mode": mode,
         "generated_at": pd.Timestamp.utcnow().isoformat(),

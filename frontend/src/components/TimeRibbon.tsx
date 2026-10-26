@@ -11,7 +11,8 @@ export function TimeRibbon() {
   const prov = fields.data?.provenance
   const init = tracks.data?.init ?? prov?.init_time
   const maxLead = prov?.leads_h[1] ?? 240
-  const leads = useMemo(() => outputLeads(maxLead), [maxLead])
+  const steps = prov?.lead_steps_h
+  const leads = useMemo(() => steps?.length ? steps : outputLeads(maxLead), [steps, maxLead])
   const svgRef = useRef<SVGSVGElement>(null)
   const [width, setWidth] = useState(800)
   const [hover, setHover] = useState<number | null>(null)

@@ -1,6 +1,6 @@
 """TIGGE GRIB2 loader (ECMWF Data Store downloads) for cases before the open archive starts.
 
-Place files under data/raw/tigge/<event_id>/ (any names ending .grib/.grib2), containing
+Place files under data/raw/tigge/<event_id>/ named <origin>_*.grib (pipeline.fetch_tigge does this), containing
 control (type=cf) and perturbed (type=pf) forecasts with: msl, 10u, 10v and tp
 (total precipitation, accumulated from step 0). See README "Loading TIGGE data" for the
 exact request. Returns the same normalized schema as ecmwf_ens.load, or None when the
@@ -37,9 +37,9 @@ def _open(paths, type_: str, short: str) -> xr.DataArray | None:
     return da
 
 
-def load(event_id: str, init: pd.Timestamp, bbox: dict) -> xr.Dataset | None:
+def load(event_id: str, init: pd.Timestamp, bbox: dict, origin: str = "ecmwf") -> xr.Dataset | None:
     folder = TIGGE_DIR / event_id
-    paths = sorted([*folder.glob("*.grib"), *folder.glob("*.grib2")]) if folder.exists() else []
+    paths = sorted([*folder.glob(f"{origin}_*.grib"), *folder.glob(f"{origin}_*.grib2")]) if folder.exists() else []
     if not paths:
         return None
     try:
@@ -57,12 +57,16 @@ def load(event_id: str, init: pd.Timestamp, bbox: dict) -> xr.Dataset | None:
             if np.datetime64(init) not in da.time.values:
                 return None
             da = da.sel(time=np.datetime64(init))
+        elif "time" in da.coords and pd.Timestamp(da.time.values) != init:
+            return None
         fields[name] = da
     ds = xr.Dataset(fields)
     ds = ds.rename({"number": "member", "latitude": "lat", "longitude": "lon"})
     ds = ds.assign_coords(lead_h=("step", (ds.step.values / np.timedelta64(1, "h")).astype(int))).swap_dims({"step": "lead_h"})
     ds = ds.drop_vars([v for v in ("step", "time", "valid_time", "surface", "heightAboveGround", "meanSea") if v in ds.coords])
     ds = ds.sel(lead_h=ds.lead_h <= MAX_LEAD_H)
+    if float(ds.lon.max()) > 180:  # 0..360 grids
+        ds = ds.assign_coords(lon=((ds.lon + 180) % 360) - 180).sortby("lon")
     if ds.lat.values[0] < ds.lat.values[-1]:
         ds = ds.isel(lat=slice(None, None, -1))
     ds = ds.sel(lat=slice(bbox["lat_max"], bbox["lat_min"]), lon=slice(bbox["lon_min"], bbox["lon_max"]))
@@ -72,6 +76,7 @@ def load(event_id: str, init: pd.Timestamp, bbox: dict) -> xr.Dataset | None:
     prate = dtp / xr.DataArray(np.where(dt > 0, dt, np.nan), dims="lead_h", coords={"lead_h": ds.lead_h})
     ds = ds.drop_vars("tp").assign(prate=prate.clip(min=0))
     ds = ds.transpose("lead_h", "member", "lat", "lon")
-    ds.attrs.update(source="TIGGE (ECMWF Data Store)", licence="CC BY 4.0 (ECMWF) / CC BY-NC 4.0 (NCMRWF, IMD)",
-                    init_time=init.isoformat(), model=f"TIGGE {event_id}")
+    names = {"ecmwf": "ECMWF IFS ENS", "ncmrwf": "NCMRWF NEPS-G", "imd": "IMD GEFS"}
+    ds.attrs.update(source=f"TIGGE {origin} (ECMWF Data Store)", licence="CC BY 4.0" if origin == "ecmwf" else "CC BY-NC 4.0",
+                    init_time=init.isoformat(), model=f"{names.get(origin, origin)} (TIGGE)")
     return ds.load()
