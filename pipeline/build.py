@@ -19,7 +19,7 @@ from scipy import ndimage
 
 from pipeline import districts as dist
 from pipeline import events as ev_mod
-from pipeline import fields, geo, snapshots, verify
+from pipeline import fields, geo, rain_verify, snapshots, verify
 from pipeline.config import ARTIFACTS, DATA, DOMAIN
 from pipeline.definitions import haversine_km, imd_category, utc_to_ist_iso
 from pipeline.ensemble import strike_probability, summarize, trim_over_land
@@ -136,11 +136,17 @@ def process_cycle(ds: xr.Dataset, init: pd.Timestamp, out: Path, bbox: dict, mem
     if tracks is not None and best is not None:
         ver = verify.verify_cycle(tracks, best, init, landfall)
         _write(ver, out / "verification.json")
+    rain_ver = None
+    if best is not None and mode == "historical-replay":
+        rain_ver = rain_verify.verify_cycle(ds, init, best)
+        if rain_ver["days"]:
+            _write(rain_ver, out / "rain_verification.json")
     _write(prov, out / "provenance.json")
     return {"init": init.isoformat(), "init_ist": utc_to_ist_iso(init), "status": "ready", "members": prov["members"],
             "leads_h": prov["leads_h"], "has_tracks": tracks is not None,
             "members_tracked": sum(1 for m in (tracks or {}).get("members", []) if m["points"]),
-            "verification": ver}
+            "verification": ver, "rain_verification": rain_ver,
+            "has_rain_verification": bool(rain_ver and rain_ver["days"])}
 
 
 def _load_cycle(e: ev_mod.Event, init: pd.Timestamp) -> tuple[xr.Dataset, str] | None:
@@ -173,8 +179,10 @@ def build_event(e: ev_mod.Event) -> dict:
         cycles.append(process_cycle(ds, init, out / f"{init:%Y%m%d%H}", e.bbox, member_tracks, e.track, e.landfall,
                                     source_id, "historical-replay", {"id": e.id, "name": e.name}))
     vers = [c["verification"] for c in cycles if c.get("verification")]
+    rvers = [c["rain_verification"] for c in cycles if c.get("rain_verification") and c["rain_verification"]["days"]]
     for c in cycles:
         c.pop("verification", None)
+        c.pop("rain_verification", None)
     peak = e.track.loc[e.track.wind_kt.idxmax()] if e.track.wind_kt.notna().any() else None
     summary = {
         "id": e.id, "sid": e.sid, "name": e.name, "basin": e.basin, "hazard": "cyclone",
@@ -193,7 +201,9 @@ def build_event(e: ev_mod.Event) -> dict:
     summary["snapshots"] = [{k: s[k] for k in ("id", "valid_time", "kind", "model_min", "distance_km")} for s in snaps]
     detail = {**summary, "best_track": _best_track_json(e.track),
               "verification_summary": verify.summary_by_lead(vers) if vers else None,
-              "verification_n_cycles": len(vers)}
+              "verification_n_cycles": len(vers),
+              "rain_verification_summary": rain_verify.summary_by_lead_day(rvers) if rvers else None,
+              "rain_verification_n_cycles": len(rvers)}
     _write(detail, out / "event.json")
     return summary
 

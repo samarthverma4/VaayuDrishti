@@ -26,6 +26,7 @@ export interface CycleInfo {
   members?: number
   leads_h?: [number, number]
   has_tracks?: boolean
+  has_rain_verification?: boolean
   members_tracked?: number
 }
 
@@ -80,6 +81,8 @@ export interface EventDetail extends EventSummary {
   best_track: BestTrackPoint[]
   verification_summary: LeadSummary[] | null
   verification_n_cycles: number
+  rain_verification_summary?: RainLeadSummary[] | null
+  rain_verification_n_cycles?: number
 }
 
 export interface CurrentSystem extends CycleInfo { id: string; first_lead_h: number; first_lat: number; first_lon: number }
@@ -145,6 +148,19 @@ export interface DistrictRow {
 }
 export interface Districts { windows: Window[]; rows: DistrictRow[]; definitions: Record<string, string>; provenance: Provenance }
 
+export interface RainScores { hits: number; misses: number; false_alarms: number; pod: number | null; far: number | null; csi: number | null }
+export interface RainDay {
+  date: string; start_h: number; end_h: number; lead_day: number; valid_start: string; valid_end: string
+  n_cells: number; obs_mean_mm: number; fc_mean_mm: number; obs_max_mm: number; fc_mean_max_mm: number; bias_mm: number; mae_mm: number
+  thresholds: Record<string, RainScores & { threshold_mm: number; observed_cells: number; forecast_cells: number; brier: number; fss: Record<string, number | null> }>
+}
+export interface RainVerification {
+  init: string; days: RainDay[]; skipped: { date: string; reason: string }[]
+  truth: string; area: string; yes_rule: string; fss_scales_cells: number[]; cell_deg: number
+  observations: { file: string; sha256: string; bytes: number; downloaded_at: string; source: string; url: string }[]
+}
+export interface RainLeadSummary { lead_day: number; n_days: number; mae_mm: number; bias_mm: number; thresholds: Record<string, RainScores> }
+
 export interface VerificationLead {
   lead_h: number; valid_time: string; obs_lat: number; obs_lon: number; obs_wind_kt: number | null
   mean_error_km: number; member_error_km_median: number | null; spread_km: number; n_members: number
@@ -209,6 +225,7 @@ export const api = {
   isobars: (id: string, cycle: string) => get<{ isobars: Record<string, GeoJSON.FeatureCollection> }>(`/events/${id}/cycles/${cycle}/isobars`),
   districts: (id: string, cycle: string) => get<Districts>(`/events/${id}/cycles/${cycle}/districts`),
   verification: (id: string, cycle: string) => get<Verification>(`/events/${id}/cycles/${cycle}/verification`),
+  rainVerification: (id: string, cycle: string) => get<RainVerification>(`/events/${id}/cycles/${cycle}/rain-verification`),
   compare: (id: string, a: string, b: string, hazard = 'very_heavy') => get<Comparison>(`/events/${id}/compare?a=${a}&b=${b}&hazard=${hazard}`),
   sources: () => get<{ sources: Source[] }>('/sources'),
   searchDistricts: (q: string) => get<{ results: DistrictMeta[] }>(`/districts?q=${encodeURIComponent(q)}&limit=12`),

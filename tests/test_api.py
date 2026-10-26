@@ -112,3 +112,19 @@ def test_tigge_snapshot_matches_source_file():
 def test_snapshot_missing_is_descriptive_404():
     r = client.get("/api/v1/events/no-such-storm/snapshots")
     assert r.status_code == 404
+
+
+def test_rain_verification_cites_imd_and_scores_days():
+    for e in json.loads((ARTIFACTS / "index.json").read_text())["events"]:
+        for c in e["cycles"]:
+            if c.get("has_rain_verification"):
+                cyc = c["init"][:13].replace("-", "").replace("T", "")
+                r = client.get(f"/api/v1/events/{e['id']}/cycles/{cyc}/rain-verification")
+                assert r.status_code == 200, r.text
+                body = r.json()
+                assert body["days"] and body["observations"][0]["source"].startswith("IMD")
+                assert body["provenance"]["members"] > 0
+                d = body["days"][0]
+                assert d["end_h"] - d["start_h"] == 24 and (d["end_h"] - 3) % 24 == 0
+                return
+    pytest.skip("no rain verification built")

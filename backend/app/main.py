@@ -192,6 +192,12 @@ def get_districts(event_id: str, cycle: str,
                     "definitions": data["definitions"]}, provenance(event_id, cycle))
 
 
+@app.get(f"{API}/events/{{event_id}}/cycles/{{cycle}}/rain-verification")
+def get_rain_verification(event_id: str, cycle: str):
+    return _cycle_file(event_id, cycle, "rain_verification.json", "rainfall verification",
+                       "Not yet evaluated: needs IMD gridded rainfall for the forecast days (python -m pipeline.fetch_imd)")
+
+
 @app.get(f"{API}/events/{{event_id}}/cycles/{{cycle}}/verification")
 def get_verification(event_id: str, cycle: str):
     return _cycle_file(event_id, cycle, "verification.json", "verification",

@@ -46,3 +46,13 @@ test('TIGGE snapshot card shows the model low against the best track', async ({ 
   await expect(card).toContainText(`${s.model_min.msl_hpa.toFixed(1)} hPa`)
   await expect(card).toContainText('No forecast lead times')
 })
+
+test('rainfall verification table matches the API', async ({ page, request }) => {
+  const r = await request.get('/api/v1/events/fengal-2024/cycles/2024113000/rain-verification')
+  test.skip(r.status() === 404, 'no rain verification built')
+  const d = (await r.json()).days[0]
+  await page.goto('/#s=verification&e=fengal-2024&c=2024113000')
+  const sec = page.getByTestId('rain-verification')
+  await expect(sec).toContainText('Rainfall vs IMD observations')
+  await expect(sec).toContainText(`${d.obs_mean_mm.toFixed(0)}/${d.fc_mean_mm.toFixed(0)}`)
+})

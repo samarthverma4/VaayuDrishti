@@ -95,6 +95,15 @@ def prepare(event_id: str, bbox: dict, origin: str = "ecmwf") -> list[pd.Timesta
     paths = _paths(event_id, origin)
     if not paths:
         return []
+    kinds = {}
+    for p in paths:
+        kind, month = p.stem.split("_")[1:3]
+        kinds.setdefault(kind, set()).add(month)
+    if kinds.get("cf") != kinds.get("pf"):
+        # a partial download would otherwise be cached as a 1- or 50-member "ensemble"
+        log.warning("%s %s: control and perturbed files do not cover the same months yet (%s); waiting for the download",
+                    event_id, origin, {k: sorted(v) for k, v in kinds.items()})
+        return []
     try:
         import cfgrib  # noqa: F401
     except ImportError:

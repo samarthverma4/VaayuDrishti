@@ -23,7 +23,7 @@ drafts for India, and shows how well past forecasts did against observed best tr
 | GeoJSON / CSV export, shareable URLs | Working | |
 | Biparjoy, Michaung (2023) | Best track only; Biparjoy also shows one TIGGE MSLP analysis (12 Jun 2023 00 UTC, isobars and model low vs best track) | Ensemble needs the full TIGGE download (loader implemented, see below) |
 | EFI-proxy / SOT and the Extremeness Profile | Formulas implemented and tested; not wired to data | Needs ERA5 climate (CDS account) |
-| Rainfall verification (MAE, POD, FAR, FSS) | Not built | Needs IMD gridded rainfall |
+| Rainfall verification vs IMD (MAE, bias, POD, FAR, CSI, Brier, FSS by lead day) | Working | IMD Pune 0.25° gridded daily rainfall, 2023-2025 |
 | NEPS-G, IMD GEFS, AIFS ENS comparison | Not built | TIGGE account / AIFS open-data ingest |
 | Spherical GNN, diffusion downscaling, physics loss | Roadmap only | |
 
@@ -39,6 +39,7 @@ uv venv --python 3.12 && uv pip install -r pyproject.toml --extra dev
 python -m pipeline.geo              # boundaries + CAP schema (about 25 MB)
 python -m pipeline.fetch            # ECMWF ENS for the case studies (about 3.5 GB, 15 min)
 python -m pipeline.fetch --latest   # newest 00 UTC run over India
+python -m pipeline.fetch_imd        # IMD 0.25° gridded rainfall for the case-study years (about 25 MB a year)
 python -m pipeline.build            # tracks, fields, districts, verification (about 80 s)
 ```
 
@@ -95,7 +96,7 @@ Natural Earth + geoBoundaries ─────────┘   fetch → track �
 - `pipeline/track/cyclone.py`: per-member MSLP-minimum tracker with a closed-low check, seeded at the observed position.
 - `pipeline/ensemble.py`: mean track, spread, envelope, landfall, strike probability.
 - `pipeline/districts.py`: district aggregation (probability that any cell in the district crosses an IMD threshold; track within 120 km).
-- `pipeline/verify.py`, `pipeline/compare.py`, `pipeline/cap.py`.
+- `pipeline/verify.py` (tracks) and `pipeline/rain_verify.py` (rain vs IMD: only IMD days whose 03-03 UTC window matches forecast steps exactly, land cells within 300 km of the observed storm), `pipeline/compare.py`, `pipeline/cap.py`.
 - `data/sources.yaml`: source registry (grid, members, licence, who verified each fact and when). Rendered in the Models page.
 - API docs: http://localhost:8000/api/v1/docs.
 
@@ -109,7 +110,7 @@ of cycles, not skill statistics.
 ## Tests
 
 ```bash
-pytest                                     # 36 tests: definitions, tracker on synthetic storms, API contracts, CAP schema
+pytest                                     # 42 tests: definitions, tracker on synthetic storms, API contracts, CAP schema
 cd frontend && npx playwright test         # browser smoke tests (needs the dev server and API running)
 node frontend/scripts/shots.mjs docs/figures   # screenshots of every view
 ```
@@ -118,6 +119,7 @@ node frontend/scripts/shots.mjs docs/figures   # screenshots of every view
 
 - ECMWF IFS ENS open data: CC BY 4.0 (ECMWF Terms of Use), archive by dynamical.org.
 - IBTrACS: NOAA NCEI, public domain.
+- IMD gridded rainfall: India Meteorological Department, Pune (Pai et al. 2014, MAUSAM 65); free download for research.
 - Natural Earth (India point-of-view boundaries): public domain.
 - geoBoundaries IND ADM1 (CC BY 2.5 IN, DataMeet / ECI) and ADM2 (ODbL 1.0, lgdirectory.gov.in).
 - TIGGE: CC BY 4.0 (ECMWF) and CC BY-NC 4.0 (NCMRWF, IMD).

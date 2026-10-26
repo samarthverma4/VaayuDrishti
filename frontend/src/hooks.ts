@@ -20,6 +20,8 @@ export const useDistricts = (id: string | null, cycle: string | null) =>
   useQuery({ queryKey: ['districts', id, cycle], queryFn: () => api.districts(id!, cycle!), enabled: enabled(id, cycle) })
 export const useVerification = (id: string | null, cycle: string | null) =>
   useQuery({ queryKey: ['verification', id, cycle], queryFn: () => api.verification(id!, cycle!), enabled: enabled(id, cycle) && id !== 'current' })
+export const useRainVerification = (id: string | null, cycle: string | null) =>
+  useQuery({ queryKey: ['rain-verification', id, cycle], queryFn: () => api.rainVerification(id!, cycle!), enabled: enabled(id, cycle) && id !== 'current' })
 export const useSources = () => useQuery({ queryKey: ['sources'], queryFn: api.sources })
 
 /** The selection the whole UI renders: event, cycle (defaults to the latest ready one), tracks, fields. */

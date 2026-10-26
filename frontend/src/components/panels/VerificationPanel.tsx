@@ -3,6 +3,7 @@ import { useSelection, useVerification } from '../../hooks'
 import { useStore } from '../../store'
 import { LineChart } from '../charts'
 import { H, Loading, NotEvaluated, Problem, Stat } from '../ui'
+import { RainVerification } from './RainVerification'
 
 export function VerificationPanel() {
   const { event, cycle, eventId, tracks } = useSelection()
@@ -75,7 +76,7 @@ export function VerificationPanel() {
         </section>
       )}
 
-      <NotEvaluated what="Rainfall verification (MAE, POD, FAR, FSS)" why="Needs IMD 0.25° gridded rainfall for the event dates; the final archive currently ends in 2024 and is not yet ingested." />
+      {cycle && <RainVerification eventId={eventId} cycle={cycle} event={event.data} />}
     </>
   )
 }
