@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: 'e2e',
   timeout: 60_000,
   use: {
-    baseURL: 'http://localhost:5180',
+    baseURL: process.env.BASE_URL ?? 'http://localhost:5180',
     viewport: { width: 1440, height: 900 },
     launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
   },

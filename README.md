@@ -55,8 +55,10 @@ or develop with hot reload: `uvicorn backend.app.main:app --port 8000` plus `cd 
 Docker (artifacts mounted, not baked in):
 
 ```bash
-docker build -t vaayudrishti . && docker run -p 8000:8000 -v "$PWD/artifacts:/app/artifacts" -v "$PWD/data:/app/data" vaayudrishti
+docker build -t vaayudrishti . && docker run -p 8000:8000 -v "$PWD/artifacts:/app/artifacts:ro" -v "$PWD/data:/app/data:ro" vaayudrishti
 ```
+
+Tested 26 Oct 2026 (Docker 29.6, arm64): 933 MB image; API, app, map layers and CAP drafts work with read-only mounts, and the Playwright suite passes against it with `BASE_URL=http://localhost:8000 npx playwright test` (one dev-only test skips).
 
 The demo runs fully offline once `artifacts/` exists: the map style, fonts and the MapLibre worker are all local.
 

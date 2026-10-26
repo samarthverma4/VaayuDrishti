@@ -6,6 +6,7 @@ declare global {
 }
 
 test('Dana replay: drawn member tracks match the API', async ({ page, request }) => {
+  test.skip(!!process.env.BASE_URL, 'reads the dev-only map handle (window.__map); production builds do not expose it')
   const api = await (await request.get('/api/v1/events/dana-2024/cycles/2024102200/tracks')).json()
   const expected = api.members.filter((m: { points: unknown[] }) => m.points.length > 1).length
 
@@ -55,4 +56,14 @@ test('rainfall verification table matches the API', async ({ page, request }) =>
   const sec = page.getByTestId('rain-verification')
   await expect(sec).toContainText('Rainfall vs IMD observations')
   await expect(sec).toContainText(`${d.obs_mean_mm.toFixed(0)}/${d.fc_mean_mm.toFixed(0)}`)
+})
+
+test('map renders the forecast layer without errors', async ({ page }) => {
+  const errors: string[] = []
+  page.on('pageerror', (e) => errors.push(e.message))
+  const png = page.waitForResponse((r) => r.url().includes('/png/') && r.status() === 200)
+  await page.goto('/#s=events&e=dana-2024&c=2024102200&t=48')
+  await expect(page.locator('canvas.maplibregl-canvas')).toBeVisible()
+  await png
+  expect(errors).toEqual([])
 })
