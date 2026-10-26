@@ -62,13 +62,13 @@ The demo runs fully offline once `artifacts/` exists: the map style, fonts and t
 ### Loading TIGGE data (Biparjoy, Michaung, NEPS-G)
 
 1. Register at the [ECMWF Data Store](https://ecds.ecmwf.int), open the [TIGGE dataset](https://ecds.ecmwf.int/datasets/tigge-forecasts?tab=download) and accept its licence (bottom of the Download tab).
-2. Copy your personal access token from your ECDS profile into `~/.ecdsapirc`:
+2. Put your personal access token in `~/.cdsapirc` (or `~/.ecdsapirc` if `~/.cdsapirc` already serves the Climate Data Store):
    ```
    url: https://ecds.ecmwf.int/api
    key: <PERSONAL-ACCESS-TOKEN>
    ```
 3. Install the GRIB tools: `uv pip install cfgrib eccodes eccodeslib cdsapi`.
-4. `python -m pipeline.fetch_tigge --dry-run` prints the six requests (ECMWF control and perturbed forecasts,
+4. `python -m pipeline.fetch_tigge --probe` sends one tiny request to test access. `python -m pipeline.fetch_tigge --dry-run` prints the six requests (ECMWF control and perturbed forecasts,
    MSLP, 10 m wind, total precipitation, T+0 to T+240 every 6 h, 00 UTC on each cycle date, event region only).
    `python -m pipeline.fetch_tigge` submits them; ECDS queues them, so allow minutes to hours.
 5. `python -m pipeline.build biparjoy-2023 michaung-2023`.

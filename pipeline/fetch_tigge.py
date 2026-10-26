@@ -1,12 +1,12 @@
 """Download TIGGE ensemble forecasts from the ECMWF Data Store (ECDS) for the 2023 case studies.
 
-Credentials: put your ECDS personal access token in ~/.ecdsapirc as
+Credentials, first match wins:
+  1. CDSAPI_URL and CDSAPI_KEY environment variables
+  2. ~/.ecdsapirc (useful if ~/.cdsapirc is already used for the Climate Data Store)
+  3. ~/.cdsapirc, the cdsapi default, when its url points at https://ecds.ecmwf.int/api
+Each file holds two lines: `url: https://ecds.ecmwf.int/api` and `key: <PERSONAL-ACCESS-TOKEN>`.
 
-    url: https://ecds.ecmwf.int/api
-    key: <PERSONAL-ACCESS-TOKEN>
-
-(a separate file so an existing ~/.cdsapirc for the Climate Data Store is not touched), then:
-
+    python -m pipeline.fetch_tigge --probe              # one tiny request to test access
     python -m pipeline.fetch_tigge --dry-run            # print the requests only
     python -m pipeline.fetch_tigge                      # ECMWF ENS for every TIGGE event
     python -m pipeline.fetch_tigge biparjoy-2023 --origin ncmrwf   # NEPS-G (CC BY-NC 4.0)
@@ -26,7 +26,8 @@ from pipeline import events
 from pipeline.ingest.tigge import TIGGE_DIR
 
 log = logging.getLogger("fetch_tigge")
-RC = Path.home() / ".ecdsapirc"
+ECDS_URL = "https://ecds.ecmwf.int/api"
+RC_FILES = [Path.home() / ".ecdsapirc", Path.home() / ".cdsapirc"]
 LEADS_H = [str(h) for h in range(0, 241, 6)]
 VARIABLES = ["mean_sea_level_pressure", "10_m_u_component_of_wind", "10_m_v_component_of_wind", "total_precipitation"]
 FORECAST_TYPES = {"cf": "control_forecast", "pf": "perturbed_forecast"}
@@ -65,13 +66,35 @@ def requests_for(ev: events.Event, origin: str) -> list[tuple[Path, dict]]:
     return out
 
 
+def credentials() -> tuple[str, str, str]:
+    """(url, key, where-from). Never logs the key."""
+    import os
+
+    if os.environ.get("CDSAPI_URL", "").startswith(ECDS_URL) and os.environ.get("CDSAPI_KEY"):
+        return os.environ["CDSAPI_URL"], os.environ["CDSAPI_KEY"], "environment"
+    for rc in RC_FILES:
+        if not rc.exists():
+            continue
+        cfg = yaml.safe_load(rc.read_text()) or {}
+        if str(cfg.get("url", "")).rstrip("/").startswith(ECDS_URL) and cfg.get("key"):
+            return str(cfg["url"]), str(cfg["key"]), str(rc)
+        log.info("%s does not point at %s; skipping it", rc, ECDS_URL)
+    raise SystemExit(f"No ECDS credentials found in CDSAPI_URL/CDSAPI_KEY, {RC_FILES[0]} or {RC_FILES[1]} (see the module docstring).")
+
+
 def client():
     import cdsapi
 
-    if not RC.exists():
-        raise SystemExit(f"Missing {RC}. Create it with your ECDS token (see the module docstring).")
-    cfg = yaml.safe_load(RC.read_text())
-    return cdsapi.Client(url=cfg["url"], key=cfg["key"])
+    url, key, where = credentials()
+    log.info("using ECDS credentials from %s", where)
+    return cdsapi.Client(url=url, key=key)
+
+
+PROBE = {  # smallest useful request: Biparjoy control forecast, one field, one step, small box
+    "origin": "ecmwf", "forecast_type": "control_forecast", "level_type": "single_level",
+    "variable": ["mean_sea_level_pressure"], "year": ["2023"], "month": ["06"], "day": ["12"],
+    "time": ["00:00"], "leadtime_hour": ["0"], "area": [25, 60, 10, 75], "data_format": "grib",
+}
 
 
 def main() -> None:
@@ -79,8 +102,16 @@ def main() -> None:
     ap.add_argument("event_ids", nargs="*")
     ap.add_argument("--origin", default="ecmwf", choices=["ecmwf", "ncmrwf", "imd"])
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--probe", action="store_true", help="submit one tiny request to check access")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+
+    if args.probe:
+        path = TIGGE_DIR / "_access_probe" / "ecmwf_cf_probe.grib"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        client().retrieve("tigge-forecasts", PROBE, str(path))
+        log.info("probe OK: %s (%d bytes)", path, path.stat().st_size)
+        return
 
     todo = []
     for ev in events.load_events():
