@@ -76,6 +76,8 @@ The demo runs fully offline once `artifacts/` exists: the map style, fonts and t
    `python -m pipeline.fetch_tigge` submits them; ECDS queues them, so allow minutes to hours.
 5. `python -m pipeline.build biparjoy-2023 michaung-2023`.
 
+Watch the downloads (TIGGE queue state and download bars, ERA5 climate) with `.venv/bin/python scripts/progress.py --watch 5`; it only reads logs and lists files.
+
 Any control-forecast MSLP field at T+0 under `data/raw/tigge/` (for example the `--probe` file) whose time falls inside an event's best track is also built as a snapshot: isobars plus the model low against IBTrACS, served at `/api/v1/events/{id}/snapshots` with the file's SHA-256 and GRIB keys. The source file is only read.
 
 For NCMRWF NEPS-G use `--origin ncmrwf` (stored separately as `ncmrwf_*.grib`; the comparison view is not built yet).
