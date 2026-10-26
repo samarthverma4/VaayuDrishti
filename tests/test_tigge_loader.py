@@ -22,7 +22,7 @@ def test_loader_normalises_schema_and_units():
     from pipeline.ingest import tigge
 
     ds = tigge.load("_probe", INIT, BBOX)
-    assert list(ds.dims) == ["lead_h", "member", "lat", "lon"]
+    assert all(ds[v].dims == ("lead_h", "member", "lat", "lon") for v in ("msl", "u10", "v10", "prate"))
     assert list(ds.member.values) == [1, 2, 3]
     assert ds.lat.values[0] == 30 and ds.lon.values[0] == 75
     assert 95000 < float(ds.msl.min()) < 101000  # Pa
